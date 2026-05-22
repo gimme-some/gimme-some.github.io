@@ -63,10 +63,10 @@ html.is-theme-transitioning *,
 html.is-theme-transitioning *::before,
 html.is-theme-transitioning *::after {
   transition: background-color 0.25s ease,
-              color 0.25s ease,
+              color 0.18s ease,
               border-color 0.25s ease,
-              fill 0.25s ease,
-              stroke 0.25s ease,
+              fill 0.18s ease,
+              stroke 0.18s ease,
               box-shadow 0.25s ease !important;
 }
 
@@ -326,7 +326,7 @@ html.dark .avatar::after { mix-blend-mode: lighten; }
 /* Content area — vertically centered so the text block sits in the middle
    of the card regardless of how tall the image makes the card. */
 .pub-content {
-  padding: 1.25rem 1.5rem;
+  padding: 1.25rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
