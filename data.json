@@ -81,7 +81,19 @@
       "pdf_url": "https://dl.acm.org/doi/pdf/10.1145/3773966.3779396"
     }
   ],
-  "projects": [],
+  "projects": [
+    {
+      "title": "LLM-Guard Project",
+      "authors": "Min-Seong Kim",
+      "image": "assets/proj-0.jpg",
+      "url": "",
+      "description": "",
+      "tags": [
+        "LLM",
+        "PII-detection"
+      ]
+    }
+  ],
   "footer": {
     "year": 2026,
     "name": "Min-Seong Kim"
