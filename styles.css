@@ -31,20 +31,45 @@
 html.dark {
   --background: #0a0a0a;
   --foreground: #fafafa;
-  --muted: #171717;
+  --muted: #1f1f1f;
   --muted-foreground: #a3a3a3;
   --border: #262626;
   --input: #262626;
   --primary: #f87171;
   --primary-foreground: #0a0a0a;
   --ring: #525252;
-  --card: #0a0a0a;            /* same as background — cards blend in */
+  --card: #171717;            /* lifted slightly above background so cards feel like surfaces */
   --card-foreground: #fafafa;
 }
  
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 html { font-size: var(--base-size); }
+
+/* Smooth theme transition.
+   When the user toggles light/dark, colors should ease between values rather
+   than snap. The cleanest way is to apply a short transition to every element
+   for the color-related properties only — this leaves layout transitions
+   (hover lifts, etc.) untouched but makes background/border/text fade
+   gracefully.
+   
+   We scope it to a brief window (.is-theme-transitioning, set by render.js)
+   so that page-load animations and normal element transitions aren't slowed
+   down by these defaults.
+
+   Note: SVG fill/stroke are included so iconography fades too. */
+html.is-theme-transitioning,
+html.is-theme-transitioning *,
+html.is-theme-transitioning *::before,
+html.is-theme-transitioning *::after {
+  transition: background-color 0.25s ease,
+              color 0.25s ease,
+              border-color 0.25s ease,
+              fill 0.25s ease,
+              stroke 0.25s ease,
+              box-shadow 0.25s ease !important;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--background);
@@ -52,7 +77,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
-  transition: background-color 0.2s ease, color 0.2s ease;
   font-feature-settings: "ss01", "cv11";   /* Better numerals if available */
 }
 img { max-width: 100%; display: block; }
@@ -263,35 +287,41 @@ html.dark .avatar::after { mix-blend-mode: lighten; }
 }
  
 /* ---- Publications ----
-   Image is square (1:1) and slightly larger than before — closer to the
-   feel of suwonyoon's paper thumbnails. The square ratio lets full-page
-   document captures sit naturally without awkward cropping. */
+   suwonyoon-style: the image sits flush against the card's left edge with no
+   padding around it, fills the card's full height, and uses a white background
+   so paper thumbnails (which are typically black-on-white) blend in naturally
+   without a gray frame around them. Padding is on the content side only. */
 .pubs-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 .pub-card {
-  display: grid; grid-template-columns: 6rem 1fr; gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
+  display: grid; grid-template-columns: 7rem 1fr; gap: 0;
+  padding: 0;
   border: 1px solid var(--border); border-radius: 0.875rem;
   background: var(--card);
   align-items: stretch;
+  overflow: hidden;            /* clip the image to the card's rounded corner */
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .pub-card:hover {
   border-color: color-mix(in srgb, var(--border) 100%, var(--foreground) 20%);
 }
-@media (min-width: 640px) { .pub-card { grid-template-columns: 7.5rem 1fr; } }
+@media (min-width: 640px) { .pub-card { grid-template-columns: 8.5rem 1fr; } }
 
-/* Square image area — width set by the grid column, height matches via
-   aspect-ratio. align-self center keeps the square vertically centered in
-   taller cards so the layout never feels lopsided. */
+/* Image area — flush with the card edge, full card height, white background. */
 .pub-image {
-  align-self: center;
+  align-self: stretch;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 0.375rem;
-  background: var(--muted); overflow: hidden;
-  border: 1px solid var(--border);
+  background: #ffffff;
+  overflow: hidden;
+  border: none;
+  border-right: 1px solid var(--border);
 }
-.pub-image img { width: 100%; height: 100%; object-fit: cover; }
+.pub-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Content gets the padding that the card used to have */
+.pub-content {
+  padding: 1.25rem 1.5rem;
+  min-width: 0;                /* allow long titles to wrap */
+}
  
 .pub-title {
   margin: 0; font-size: 0.9375rem;
@@ -363,10 +393,13 @@ html.dark .avatar::after { mix-blend-mode: lighten; }
 .pub-action svg { width: 0.9375rem; height: 0.9375rem; }
 html.dark .pub-action {
   box-shadow: none;
+  /* On the lifted card surface, the button uses a slightly darker fill so it
+     reads as inset within the card rather than floating above it. */
   background: var(--background);
+  border-color: color-mix(in srgb, var(--border) 100%, var(--foreground) 5%);
 }
 html.dark .pub-action:hover {
-  background: var(--muted);
+  background: color-mix(in srgb, var(--background) 100%, var(--foreground) 8%);
   box-shadow: none;
 }
  

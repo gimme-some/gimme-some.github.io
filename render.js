@@ -60,12 +60,23 @@ function imgTag(src, kind, alt) {
 function setupTheme() {
   const btn = document.getElementById('theme-toggle');
   if (!btn) return;
+  let transitionTimer = null;
   btn.addEventListener('click', () => {
-    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const root = document.documentElement;
+    // Turn on the global "fade colors between themes" transition for a short
+    // window, then turn it off again so other transitions (hover, focus) run
+    // at their own usual speeds.
+    root.classList.add('is-theme-transitioning');
+    if (transitionTimer) clearTimeout(transitionTimer);
+    transitionTimer = setTimeout(() => {
+      root.classList.remove('is-theme-transitioning');
+    }, 300);
+
+    const current = root.classList.contains('dark') ? 'dark' : 'light';
     const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(next);
-    document.documentElement.style.colorScheme = next;
+    root.classList.remove('light', 'dark');
+    root.classList.add(next);
+    root.style.colorScheme = next;
     try { localStorage.setItem('theme', next); } catch(e) {}
   });
 }
@@ -242,7 +253,7 @@ function render() {
       if (pub.highlight) tags.push('<span class="tag highlight">' + escapeHtml(pub.highlight) + '</span>');
       card.innerHTML =
         '<div class="pub-image">' + imgTag(pub.image, 'paper', pub.title) + '</div>' +
-        '<div>' +
+        '<div class="pub-content">' +
           '<h3 class="pub-title">' + escapeHtml(pub.title) + '</h3>' +
           '<p class="pub-authors">' + highlightSelf(pub.authors, p.name || '') + '</p>' +
           (tags.length ? '<div class="pub-tags">' + tags.join('') + '</div>' : '') +
