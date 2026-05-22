@@ -284,7 +284,7 @@ function render() {
         '<div class="project-image">' + imgTag(pr.image, 'project', pr.title) + '</div>' +
         '<div class="project-body">' +
           '<h3 class="project-title">' + escapeHtml(pr.title) + '</h3>' +
-          (pr.authors ? '<p class="project-authors">' + highlightSelf(pr.authors, p.name || '') + '</p>' : '') +
+          (pr.authors ? '<p class="project-authors">' + escapeHtml(pr.authors) + '</p>' : '') +
           (pr.description ? '<p class="project-authors" style="margin-top:0.5rem;">' + escapeHtml(pr.description) + '</p>' : '') +
           (tags ? '<div class="project-tags">' + tags + '</div>' : '') +
         '</div>';

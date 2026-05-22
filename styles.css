@@ -347,9 +347,8 @@ html.dark .avatar::after { mix-blend-mode: lighten; }
   color: var(--muted-foreground);
   line-height: 1.5;
 }
-/* Bolded self-name in author list — truly bold + foreground */
-.pub-authors .self,
-.project-authors .self {
+/* Bolded self-name in author list — truly bold + foreground (publications only) */
+.pub-authors .self {
   font-weight: var(--bold-weight);
   color: var(--foreground);
 }
