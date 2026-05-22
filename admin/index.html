@@ -75,14 +75,14 @@
 
         <div id="status-line" style="margin-bottom:1rem; font-size:0.8rem; color:var(--muted-foreground);"></div>
 
-        <!-- Design Tokens (NEW) -->
+        <!-- Design Tokens -->
         <div class="admin-section">
           <h2>
-            <span>🎨 Design — Color &amp; Typography</span>
+            <span>🎨 Design</span>
           </h2>
 
           <div class="field">
-            <label>Accent color (light mode)</label>
+            <label>Accent color · light mode</label>
             <div class="color-field">
               <input type="color" data-design="primary" value="#dc2626">
               <input type="text" data-design-text="primary" value="#dc2626" pattern="^#[0-9a-fA-F]{6}$">
@@ -102,10 +102,22 @@
           </div>
 
           <div class="field">
-            <label>Accent color (dark mode)</label>
+            <label>Accent color · dark mode</label>
             <div class="color-field">
               <input type="color" data-design="primary_dark" value="#f87171">
               <input type="text" data-design-text="primary_dark" value="#f87171">
+            </div>
+            <div class="preset-row" data-preset-target="primary_dark">
+              <button class="preset-swatch" style="background:#f87171" data-color="#f87171" title="Red"></button>
+              <button class="preset-swatch" style="background:#fb923c" data-color="#fb923c" title="Orange"></button>
+              <button class="preset-swatch" style="background:#fbbf24" data-color="#fbbf24" title="Amber"></button>
+              <button class="preset-swatch" style="background:#a3e635" data-color="#a3e635" title="Lime"></button>
+              <button class="preset-swatch" style="background:#34d399" data-color="#34d399" title="Emerald"></button>
+              <button class="preset-swatch" style="background:#22d3ee" data-color="#22d3ee" title="Cyan"></button>
+              <button class="preset-swatch" style="background:#60a5fa" data-color="#60a5fa" title="Blue"></button>
+              <button class="preset-swatch" style="background:#a78bfa" data-color="#a78bfa" title="Violet"></button>
+              <button class="preset-swatch" style="background:#f472b6" data-color="#f472b6" title="Pink"></button>
+              <button class="preset-swatch" style="background:#a3a3a3" data-color="#a3a3a3" title="Gray"></button>
             </div>
           </div>
 
@@ -113,50 +125,75 @@
             <div class="field">
               <label>Sans-serif font</label>
               <select data-design="font_sans">
-                <option value="system">System (Pretendard/SF)</option>
+                <option value="pretendard">Pretendard (default)</option>
+                <option value="system">System default</option>
                 <option value="inter">Inter</option>
-                <option value="pretendard">Pretendard</option>
                 <option value="ibm_plex">IBM Plex Sans</option>
                 <option value="manrope">Manrope</option>
+                <option value="jakarta">Plus Jakarta Sans</option>
+                <option value="outfit">Outfit</option>
+                <option value="space_grotesk">Space Grotesk</option>
+                <option value="dm_sans">DM Sans</option>
               </select>
             </div>
             <div class="field">
               <label>Mono font (dates, code)</label>
               <select data-design="font_mono">
-                <option value="system">System</option>
+                <option value="roboto_mono">Roboto Mono (default)</option>
                 <option value="jetbrains">JetBrains Mono</option>
                 <option value="ibm_plex_mono">IBM Plex Mono</option>
                 <option value="source_code">Source Code Pro</option>
+                <option value="fira_code">Fira Code</option>
+                <option value="dm_mono">DM Mono</option>
+                <option value="system">System default</option>
               </select>
-            </div>
-          </div>
-
-          <div class="field">
-            <label>Base font size <span class="slider-value" data-show="base_font_size">16px</span></label>
-            <div class="slider-field">
-              <input type="range" data-design="base_font_size" min="14" max="20" step="1" value="16">
-              <span class="slider-value" data-show="base_font_size">16</span>
-            </div>
-          </div>
-
-          <div class="field">
-            <label>Name size (sidebar) <span class="slider-value" data-show="name_font_size">36px</span></label>
-            <div class="slider-field">
-              <input type="range" data-design="name_font_size" min="24" max="44" step="1" value="36">
-              <span class="slider-value" data-show="name_font_size">36</span>
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Heading weight <span class="slider-value" data-show="heading_weight">500</span></label>
+              <label>Base font size · <span class="slider-value" data-show="base_font_size" data-suffix="px">16px</span></label>
+              <div class="slider-field">
+                <input type="range" data-design="base_font_size" min="14" max="20" step="1" value="16">
+                <span class="slider-value" data-show="base_font_size">16</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Name size · <span class="slider-value" data-show="name_font_size" data-suffix="px">36px</span></label>
+              <div class="slider-field">
+                <input type="range" data-design="name_font_size" min="24" max="44" step="1" value="36">
+                <span class="slider-value" data-show="name_font_size">36</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Mono size · <span class="slider-value" data-show="mono_size" data-suffix="px">13px</span></label>
+              <div class="slider-field">
+                <input type="range" data-design="mono_size" min="11" max="16" step="1" value="13">
+                <span class="slider-value" data-show="mono_size">13</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Mono weight · <span class="slider-value" data-show="mono_weight">500</span></label>
+              <div class="slider-field">
+                <input type="range" data-design="mono_weight" min="400" max="700" step="100" value="500">
+                <span class="slider-value" data-show="mono_weight">500</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Heading weight · <span class="slider-value" data-show="heading_weight">500</span></label>
               <div class="slider-field">
                 <input type="range" data-design="heading_weight" min="400" max="800" step="100" value="500">
                 <span class="slider-value" data-show="heading_weight">500</span>
               </div>
             </div>
             <div class="field">
-              <label>Bold text weight <span class="slider-value" data-show="bold_weight">700</span></label>
+              <label>Bold weight · <span class="slider-value" data-show="bold_weight">700</span></label>
               <div class="slider-field">
                 <input type="range" data-design="bold_weight" min="500" max="900" step="100" value="700">
                 <span class="slider-value" data-show="bold_weight">700</span>
@@ -165,7 +202,7 @@
           </div>
 
           <div class="field">
-            <label>Tag font weight <span class="slider-value" data-show="tag_weight">500</span></label>
+            <label>Tag weight · <span class="slider-value" data-show="tag_weight">500</span></label>
             <div class="slider-field">
               <input type="range" data-design="tag_weight" min="400" max="700" step="100" value="500">
               <span class="slider-value" data-show="tag_weight">500</span>
@@ -263,11 +300,13 @@
     <!-- Live preview pane -->
     <div class="preview-pane" id="preview-pane">
       <div class="preview-toolbar">
-        <span>Live preview</span>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
-          <span class="preview-status" id="preview-status">●</span>
-          <button class="preview-toggle" id="preview-toggle" title="Show/hide preview">▾</button>
-        </div>
+        <span style="display:flex; gap:0.5rem; align-items:center;">
+          <span class="preview-status" id="preview-status" title="Sync status">●</span>
+          <span>Live preview</span>
+        </span>
+        <button class="preview-toggle" id="preview-toggle" title="Show or hide preview">
+          <span id="preview-toggle-label">Hide</span>
+        </button>
       </div>
       <iframe id="preview-frame" src="../index.html" title="Preview"></iframe>
     </div>

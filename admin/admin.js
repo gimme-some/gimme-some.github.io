@@ -141,10 +141,13 @@ function fillDesignControls() {
     const key = el.getAttribute('data-design-text');
     if (d[key] != null) el.value = d[key];
   });
-  // Update slider displays
+  // Update slider displays with proper suffix
   $$('[data-show]').forEach(el => {
     const key = el.getAttribute('data-show');
-    if (d[key] != null) el.textContent = d[key];
+    if (d[key] != null) {
+      const suffix = el.getAttribute('data-suffix') || (/size$/.test(key) ? 'px' : '');
+      el.textContent = d[key] + suffix;
+    }
   });
   // Highlight active preset swatch
   $$('[data-preset-target]').forEach(group => {
@@ -325,7 +328,8 @@ function collectLists() {
   });
 }
 
-/* ---- Live preview sync ---- */
+/* Live preview sync — pushes current state to the iframe over postMessage.
+   Debounced so rapid input doesn't cause render thrashing. */
 let previewTimer = null;
 function syncPreview(immediate) {
   clearTimeout(previewTimer);
@@ -334,17 +338,29 @@ function syncPreview(immediate) {
     collectBindings();
     collectDesign();
     const iframe = $('#preview-frame');
+    const status = $('#preview-status');
     if (iframe && iframe.contentWindow) {
       try {
         iframe.contentWindow.postMessage({ type: 'data', payload: STATE.data }, '*');
-        $('#preview-status').textContent = '● synced';
-        $('#preview-status').style.color = 'var(--muted-foreground)';
+        // Green dot = preview is in sync with current edits
+        if (status) {
+          status.style.color = '#22c55e';
+          status.title = 'Preview is up to date';
+        }
       } catch (e) {}
     }
     markDirty();
   };
   if (immediate) send();
-  else previewTimer = setTimeout(send, 80);
+  else {
+    // Show "pending" state immediately
+    const status = $('#preview-status');
+    if (status) {
+      status.style.color = 'var(--muted-foreground)';
+      status.title = 'Updating preview...';
+    }
+    previewTimer = setTimeout(send, 80);
+  }
 }
 
 function markDirty() {
@@ -420,9 +436,11 @@ function wireEvents() {
       const key = el.getAttribute('data-design');
       const text = document.querySelector('[data-design-text="' + key + '"]');
       if (text && el.type === 'color') text.value = el.value;
-      // Update displays
+      // Update displays — append px for size keys
+      const isSize = /size$/.test(key);
       $$('[data-show="' + key + '"]').forEach(s => {
-        s.textContent = el.value + (key.indexOf('size') > -1 ? 'px' : '');
+        const suffix = s.getAttribute('data-suffix') || (isSize ? 'px' : '');
+        s.textContent = el.value + suffix;
       });
       // Update preset highlight
       const group = document.querySelector('[data-preset-target="' + key + '"]');
@@ -565,10 +583,11 @@ function setupSplitter() {
 function setupPreviewToggle() {
   const btn = document.getElementById('preview-toggle');
   const pane = document.getElementById('preview-pane');
+  const label = document.getElementById('preview-toggle-label');
   if (!btn || !pane) return;
   btn.addEventListener('click', () => {
-    pane.classList.toggle('collapsed');
-    btn.textContent = pane.classList.contains('collapsed') ? '▴' : '▾';
+    const isCollapsed = pane.classList.toggle('collapsed');
+    if (label) label.textContent = isCollapsed ? 'Show' : 'Hide';
   });
 }
 
@@ -621,13 +640,15 @@ function ensureDataDefaults() {
   const defaults = {
     primary: '#dc2626',
     primary_dark: '#f87171',
-    font_sans: 'system',
-    font_mono: 'system',
+    font_sans: 'pretendard',
+    font_mono: 'roboto_mono',
     base_font_size: 16,
     name_font_size: 36,
     heading_weight: 500,
     bold_weight: 700,
-    tag_weight: 500
+    tag_weight: 500,
+    mono_size: 13,
+    mono_weight: 500
   };
   if (!STATE.data.design) STATE.data.design = {};
   Object.keys(defaults).forEach(k => {

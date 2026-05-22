@@ -14,19 +14,29 @@ const ICONS = {
   'twitter': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>'
 };
 
-// Font stacks selectable in admin
+// Font stacks selectable in admin.
+// Note: "pretendard" is the default for Korean+English support.
+// "system" uses platform-native fonts (San Francisco, Segoe UI, etc.) — listed
+// just because it has zero load cost.
 const FONT_STACKS = {
-  system: '-apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Segoe UI", "Helvetica Neue", Arial, "Noto Sans KR", sans-serif',
-  inter: '"Inter", -apple-system, "Pretendard", sans-serif',
-  pretendard: '"Pretendard", -apple-system, sans-serif',
-  ibm_plex: '"IBM Plex Sans", -apple-system, "Pretendard", sans-serif',
-  manrope: '"Manrope", -apple-system, "Pretendard", sans-serif'
+  pretendard: '"Pretendard", -apple-system, "Apple SD Gothic Neo", sans-serif',
+  system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Pretendard", sans-serif',
+  inter: '"Inter", "Pretendard", sans-serif',
+  ibm_plex: '"IBM Plex Sans", "Pretendard", sans-serif',
+  manrope: '"Manrope", "Pretendard", sans-serif',
+  jakarta: '"Plus Jakarta Sans", "Pretendard", sans-serif',
+  outfit: '"Outfit", "Pretendard", sans-serif',
+  space_grotesk: '"Space Grotesk", "Pretendard", sans-serif',
+  dm_sans: '"DM Sans", "Pretendard", sans-serif'
 };
 const MONO_STACKS = {
-  system: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+  roboto_mono: '"Roboto Mono", ui-monospace, SFMono-Regular, monospace',
   jetbrains: '"JetBrains Mono", ui-monospace, monospace',
   ibm_plex_mono: '"IBM Plex Mono", ui-monospace, monospace',
-  source_code: '"Source Code Pro", ui-monospace, monospace'
+  source_code: '"Source Code Pro", ui-monospace, monospace',
+  fira_code: '"Fira Code", ui-monospace, monospace',
+  dm_mono: '"DM Mono", ui-monospace, monospace',
+  system: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 };
 
 let DATA = null;
@@ -95,10 +105,12 @@ function applyDesign(design) {
   // Sizes
   if (design.base_font_size) root.setProperty('--base-size', design.base_font_size + 'px');
   if (design.name_font_size) root.setProperty('--name-size', design.name_font_size + 'px');
+  if (design.mono_size) root.setProperty('--mono-size', design.mono_size + 'px');
   // Weights
   if (design.heading_weight) root.setProperty('--heading-weight', design.heading_weight);
   if (design.bold_weight) root.setProperty('--bold-weight', design.bold_weight);
   if (design.tag_weight) root.setProperty('--tag-weight', design.tag_weight);
+  if (design.mono_weight) root.setProperty('--mono-weight', design.mono_weight);
 }
 
 function render() {
