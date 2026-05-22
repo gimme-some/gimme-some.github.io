@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personal Homepage</title>
+  <meta name="description" content="Personal homepage">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function(){
+      try {
+        var t = localStorage.getItem('theme') || 'system';
+        var resolved = t === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : t;
+        document.documentElement.classList.remove('light','dark');
+        document.documentElement.classList.add(resolved);
+        document.documentElement.style.colorScheme = resolved;
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body class="antialiased">
+  <div class="min-h-screen bg-background">
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">…</a>
+        <div class="nav-links" id="nav-links">
+          <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+            <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="avatar-wrap">
+          <span class="avatar"><img id="profile-photo" alt="" src=""></span>
+        </div>
+        <h1 id="profile-name" class="profile-name">…</h1>
+        <p id="profile-title" class="profile-title"></p>
+        <p id="profile-location" class="profile-location"></p>
+        <div id="sidebar-links" class="sidebar-links"></div>
+      </aside>
+
+      <div class="separator-mobile"></div>
+
+      <div class="content">
+        <section>
+          <h2 class="section-title">About</h2>
+          <p id="about-text" class="about-text"></p>
+        </section>
+
+        <div class="separator"></div>
+
+        <section id="news-section">
+          <h2 class="section-title">Latest News</h2>
+          <div id="news-list" class="news-list"></div>
+        </section>
+
+        <div class="separator" id="sep-pubs"></div>
+
+        <section id="pubs-section">
+          <h2 class="section-title">Publications</h2>
+          <div id="pubs-list" class="pubs-list"></div>
+        </section>
+
+        <div class="separator" id="sep-projects"></div>
+
+        <section id="projects-section">
+          <h2 class="section-title">Projects</h2>
+          <div id="projects-list" class="projects-grid"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span id="footer-text">© 2026</span>
+        <div id="footer-icons" class="footer-icons"></div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="render.js"></script>
+</body>
+</html>

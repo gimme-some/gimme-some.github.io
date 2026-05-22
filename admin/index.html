@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · Edit Site</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="../styles.css">
+  <script>
+    (function(){
+      try {
+        var t = localStorage.getItem('theme') || 'system';
+        var resolved = t === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : t;
+        document.documentElement.classList.remove('light','dark');
+        document.documentElement.classList.add(resolved);
+        document.documentElement.style.colorScheme = resolved;
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body class="antialiased">
+  <div class="min-h-screen bg-background">
+
+    <div id="login-overlay" class="login-overlay">
+      <div class="login-card">
+        <h1>Sign in to edit</h1>
+        <p>
+          This page edits your homepage via the GitHub API. You'll need a
+          <strong>Personal Access Token (PAT)</strong> with <code>repo</code>
+          scope so it can commit to your <code>username.github.io</code> repo.
+          See the README for setup instructions.
+        </p>
+        <div class="field">
+          <label for="pat-input">GitHub Personal Access Token</label>
+          <input id="pat-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="repo-input">Repository (owner/repo)</label>
+          <input id="repo-input" type="text" placeholder="username/username.github.io">
+        </div>
+        <div class="field">
+          <label for="branch-input">Branch</label>
+          <input id="branch-input" type="text" value="main">
+        </div>
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap: wrap;">
+          <button class="btn btn-primary" id="login-btn">Sign in</button>
+          <label style="display:flex; gap:0.375rem; align-items:center; font-size:0.85rem; color:var(--muted-foreground);">
+            <input type="checkbox" id="remember-pat" checked style="width:auto;">
+            Remember on this device
+          </label>
+        </div>
+        <p id="login-error" style="color: var(--primary); display:none; margin-top: 0.75rem; font-size:0.85rem;"></p>
+      </div>
+    </div>
+
+    <div id="admin-root" style="display:none;">
+      <div class="admin-container">
+        <div class="admin-header">
+          <h1>Edit Homepage</h1>
+          <div class="admin-actions">
+            <a class="btn btn-sm" href="../" target="_blank" rel="noopener">View site</a>
+            <button class="btn btn-sm" id="reload-btn" title="Re-fetch from GitHub">Reload</button>
+            <button class="btn btn-sm btn-danger" id="logout-btn">Sign out</button>
+            <button class="btn btn-primary btn-sm" id="save-btn">Save changes</button>
+          </div>
+        </div>
+
+        <div id="status-line" style="margin-bottom:1rem; font-size:0.85rem; color:var(--muted-foreground);"></div>
+
+        <div class="admin-section">
+          <h2><span>Profile</span></h2>
+          <div class="field-row">
+            <div class="field"><label>Name</label><input data-bind="profile.name"></div>
+            <div class="field"><label>Location</label><input data-bind="profile.location"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Title (e.g., M.S. Student at)</label><input data-bind="profile.title"></div>
+            <div class="field"><label>Affiliation (e.g., POSTECH)</label><input data-bind="profile.affiliation"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Lab name</label><input data-bind="profile.lab_name"></div>
+            <div class="field"><label>Lab URL</label><input data-bind="profile.lab_url"></div>
+          </div>
+          <div class="field"><label>Photo path (e.g., assets/profile.jpg)</label><input data-bind="profile.photo"></div>
+        </div>
+
+        <div class="admin-section">
+          <h2><span>About</span></h2>
+          <div class="field">
+            <label>About paragraph (supports [text](url) markdown links)</label>
+            <textarea data-bind="about" rows="5"></textarea>
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <h2>
+            <span>Sidebar Links</span>
+            <button class="btn btn-sm" data-add="links">+ Add link</button>
+          </h2>
+          <div id="links-list"></div>
+        </div>
+
+        <div class="admin-section">
+          <h2>
+            <span>News</span>
+            <button class="btn btn-sm" data-add="news">+ Add news</button>
+          </h2>
+          <div id="news-list-edit"></div>
+        </div>
+
+        <div class="admin-section">
+          <h2>
+            <span>Publications</span>
+            <button class="btn btn-sm" data-add="publications">+ Add publication</button>
+          </h2>
+          <div id="pubs-list-edit"></div>
+        </div>
+
+        <div class="admin-section">
+          <h2>
+            <span>Projects</span>
+            <button class="btn btn-sm" data-add="projects">+ Add project</button>
+          </h2>
+          <div id="projects-list-edit"></div>
+        </div>
+
+        <div class="admin-section">
+          <h2>
+            <span>Top Nav Links</span>
+            <button class="btn btn-sm" data-add="nav_links">+ Add nav link</button>
+          </h2>
+          <div id="nav-list-edit"></div>
+        </div>
+
+        <div class="admin-section">
+          <h2><span>Footer</span></h2>
+          <div class="field-row">
+            <div class="field"><label>Year</label><input type="number" data-bind="footer.year"></div>
+            <div class="field"><label>Name</label><input data-bind="footer.name"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

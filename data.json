@@ -1,0 +1,53 @@
+{
+  "profile": {
+    "name": "Minseong",
+    "title": "M.S. Student at",
+    "lab_name": "AI Lab",
+    "lab_url": "https://example.com",
+    "affiliation": "AI Graduate School",
+    "location": "Seoul, South Korea",
+    "photo": "assets/profile.svg"
+  },
+  "about": "I am a Master's student researching recommender systems, with interests spanning LLM-based recommendation, popularity bias mitigation, and graph-based recommendation enhanced by LLMs. I am always open to research collaborations and discussions—feel free to reach out!",
+  "links": [
+    { "icon": "external-link", "label": "Lab", "url": "https://example.com" },
+    { "icon": "mail", "label": "Email", "url": "mailto:your.email@example.com" },
+    { "icon": "graduation-cap", "label": "Google Scholar", "url": "https://scholar.google.com/" },
+    { "icon": "linkedin", "label": "LinkedIn", "url": "https://linkedin.com/" },
+    { "icon": "github", "label": "GitHub", "url": "https://github.com/" },
+    { "icon": "file-text", "label": "CV", "url": "cv.pdf" }
+  ],
+  "nav_links": [
+    { "label": "GitHub", "url": "https://github.com/" }
+  ],
+  "news": [
+    { "date": "Nov 2025", "text": "ARROW paper accepted to WSDM 2026!", "highlight": true },
+    { "date": "Sep 2025", "text": "Started RecGoT project, targeting NeurIPS submission.", "highlight": false },
+    { "date": "Mar 2025", "text": "Began M.S. program in AI Graduate School.", "highlight": false }
+  ],
+  "publications": [
+    {
+      "title": "ARROW: Adaptive Reasoning modulatOR for LLM-based Recommendation",
+      "authors": "Co-author, Minseong, et al.",
+      "venue_tag": "WSDM 2026",
+      "type_tag": "Full Paper",
+      "highlight": "",
+      "image": "assets/paper-placeholder.svg",
+      "pdf_url": "#"
+    }
+  ],
+  "projects": [
+    {
+      "title": "RecGoT",
+      "authors": "Minseong",
+      "description": "LLM-compiled item representation with typed-edge graphs and flow-coherence regularization. Compile once, serve free.",
+      "image": "assets/project-placeholder.svg",
+      "tags": ["LLM", "Graph", "Recommender Systems"],
+      "url": "#"
+    }
+  ],
+  "footer": {
+    "year": 2026,
+    "name": "Minseong"
+  }
+}
