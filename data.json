@@ -8,7 +8,7 @@
     "location": "Seoul, South Korea",
     "photo": "assets/profile.png"
   },
-  "about": "I am a 1st year M.S. student at Chung-Ang University, advised by Professor Yoon-Sik Cho at the [Data Science Lab](https://sites.google.com/aicampus.cau.ac.kr/dsl/home).",
+  "about": "I am a 1st year M.S. student at Chung-Ang University, advised by Professor Yoon-Sik Cho at the [Data Science Lab](https://sites.google.com/aicampus.cau.ac.kr/dsl/home). My research focuses on LLM-based recommender systems, with a particular interest in how language models can make recommendations both more effective and more transparent. I work on integrating LLM-derived signals into sequential recommendation in a cost-efficient way, and on studying whether the natural-language reasoning behind these recommendations actually reflects what drives the model's predictions. My broader goal is to build recommender systems whose outputs and rationales users can genuinely trust.",
   "design": {
     "primary": "#059669",
     "primary_dark": "#34d399",
