@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en" class="light admin-html">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -257,11 +257,17 @@
       </div>
     </div>
 
+    <!-- Drag handle between panes -->
+    <div class="admin-resizer" id="admin-resizer" role="separator" aria-orientation="vertical" aria-label="Resize panes"></div>
+
     <!-- Live preview pane -->
-    <div class="preview-pane">
+    <div class="preview-pane" id="preview-pane">
       <div class="preview-toolbar">
         <span>Live preview</span>
-        <span class="preview-status" id="preview-status">●</span>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <span class="preview-status" id="preview-status">●</span>
+          <button class="preview-toggle" id="preview-toggle" title="Show/hide preview">▾</button>
+        </div>
       </div>
       <iframe id="preview-frame" src="../index.html" title="Preview"></iframe>
     </div>

@@ -494,6 +494,82 @@ function wireEvents() {
   window.addEventListener('beforeunload', (e) => {
     if (STATE.dirty) { e.preventDefault(); e.returnValue = ''; }
   });
+
+  // ---- Splitter: drag to resize panes ----
+  setupSplitter();
+  // ---- Mobile preview toggle ----
+  setupPreviewToggle();
+}
+
+/* Resizer: drag the divider to change pane widths.
+   Width is persisted in localStorage so it's remembered next time. */
+const SPLIT_KEY = 'admin_split_v1';
+
+function setupSplitter() {
+  const resizer = document.getElementById('admin-resizer');
+  const leftPane = document.querySelector('.admin-pane');
+  const shell = document.getElementById('admin-root');
+  if (!resizer || !leftPane || !shell) return;
+
+  // Restore saved width
+  try {
+    const saved = parseFloat(localStorage.getItem(SPLIT_KEY));
+    if (saved && saved > 15 && saved < 85) {
+      leftPane.style.width = saved + '%';
+    }
+  } catch (e) {}
+
+  let dragging = false;
+
+  function onDown(e) {
+    // Only desktop layout
+    if (window.matchMedia('(max-width: 767px)').matches) return;
+    dragging = true;
+    document.body.classList.add('is-resizing');
+    e.preventDefault();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const rect = shell.getBoundingClientRect();
+    let pct = ((x - rect.left) / rect.width) * 100;
+    // Clamp so neither pane disappears
+    pct = Math.max(20, Math.min(80, pct));
+    leftPane.style.width = pct + '%';
+  }
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    document.body.classList.remove('is-resizing');
+    // Persist current width
+    try {
+      const pct = parseFloat(leftPane.style.width);
+      if (pct) localStorage.setItem(SPLIT_KEY, String(pct));
+    } catch (e) {}
+  }
+
+  resizer.addEventListener('mousedown', onDown);
+  resizer.addEventListener('touchstart', onDown, { passive: false });
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('mouseup', onUp);
+  window.addEventListener('touchend', onUp);
+
+  // Double-click resets to 50/50
+  resizer.addEventListener('dblclick', () => {
+    leftPane.style.width = '50%';
+    try { localStorage.setItem(SPLIT_KEY, '50'); } catch (e) {}
+  });
+}
+
+function setupPreviewToggle() {
+  const btn = document.getElementById('preview-toggle');
+  const pane = document.getElementById('preview-pane');
+  if (!btn || !pane) return;
+  btn.addEventListener('click', () => {
+    pane.classList.toggle('collapsed');
+    btn.textContent = pane.classList.contains('collapsed') ? '▴' : '▾';
+  });
 }
 
 async function login() {

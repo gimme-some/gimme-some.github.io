@@ -417,31 +417,36 @@ html.dark .pub-action {
 /* ============================================================
    Admin page styles
    ============================================================ */
+html.admin-html, body.admin-body { height: 100%; overflow: hidden; }
 body.admin-body { padding: 0; }
 
+/* Two-pane split layout — both panes always visible side by side.
+   Widths are controlled by JS via inline style on the resizer's siblings;
+   defaults below cover the first paint before JS runs. */
 .admin-shell {
-  display: grid;
-  grid-template-columns: 1fr;
-  min-height: 100vh;
-}
-@media (min-width: 1024px) {
-  .admin-shell { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .admin-pane {
+  width: 50%;
+  min-width: 320px;
+  height: 100vh;
   overflow-y: auto;
-  max-height: 100vh;
+  flex-shrink: 0;
 }
+
 .preview-pane {
-  display: none;
+  flex: 1;             /* fills remaining space */
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   border-left: 1px solid var(--border);
   background: var(--muted);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-@media (min-width: 1024px) {
-  .preview-pane { display: flex; flex-direction: column; }
 }
 .preview-pane iframe {
   flex: 1;
@@ -459,8 +464,78 @@ body.admin-body { padding: 0; }
   background: var(--background);
   font-size: 0.8rem;
   color: var(--muted-foreground);
+  flex-shrink: 0;
 }
 .preview-status { font-family: var(--font-mono); }
+
+/* Vertical drag handle between panes */
+.admin-resizer {
+  width: 6px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: var(--border);
+  position: relative;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+.admin-resizer::before {
+  /* Wider invisible hit area for easier grabbing */
+  content: "";
+  position: absolute;
+  inset: 0 -4px;
+}
+.admin-resizer::after {
+  /* Visible grip dots */
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 36px;
+  background: var(--muted-foreground);
+  opacity: 0.4;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.15s ease;
+}
+.admin-resizer:hover { background: var(--muted-foreground); }
+.admin-resizer:hover::after { opacity: 0.8; }
+body.is-resizing { cursor: col-resize !important; user-select: none; }
+body.is-resizing iframe { pointer-events: none; }
+
+/* Mobile: stack vertically, hide resizer, preview goes below */
+@media (max-width: 767px) {
+  .admin-shell { flex-direction: column; height: auto; overflow: visible; }
+  html.admin-html, body.admin-body { height: auto; overflow: auto; }
+  .admin-pane { width: 100%; height: auto; max-height: none; overflow: visible; }
+  .admin-resizer { display: none; }
+  .preview-pane {
+    width: 100%;
+    height: 70vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+  }
+  /* Mobile toggle button to collapse preview */
+  .preview-pane.collapsed { height: 2.5rem; }
+  .preview-pane.collapsed iframe { display: none; }
+}
+
+/* Toggle button (mobile only) */
+.preview-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-family: inherit;
+  padding: 0.25rem 0.5rem;
+}
+@media (max-width: 767px) {
+  .preview-toggle { display: inline-flex; align-items: center; gap: 0.25rem; }
+}
 
 .admin-container {
   max-width: 48rem; margin: 0 auto;
