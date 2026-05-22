@@ -1,5 +1,6 @@
 /* ============================================================
-   render.js — fetches data.json and renders the page
+   render.js — fetches data.json, renders the page,
+   listens for live-preview messages from admin.
    ============================================================ */
 
 const ICONS = {
@@ -11,6 +12,21 @@ const ICONS = {
   'file-text': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
   'globe': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>',
   'twitter': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>'
+};
+
+// Font stacks selectable in admin
+const FONT_STACKS = {
+  system: '-apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Segoe UI", "Helvetica Neue", Arial, "Noto Sans KR", sans-serif',
+  inter: '"Inter", -apple-system, "Pretendard", sans-serif',
+  pretendard: '"Pretendard", -apple-system, sans-serif',
+  ibm_plex: '"IBM Plex Sans", -apple-system, "Pretendard", sans-serif',
+  manrope: '"Manrope", -apple-system, "Pretendard", sans-serif'
+};
+const MONO_STACKS = {
+  system: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+  jetbrains: '"JetBrains Mono", ui-monospace, monospace',
+  ibm_plex_mono: '"IBM Plex Mono", ui-monospace, monospace',
+  source_code: '"Source Code Pro", ui-monospace, monospace'
 };
 
 let DATA = null;
@@ -52,9 +68,45 @@ function highlightSelf(authors, selfName) {
   return escapeHtml(authors).replace(re, '<span class="self">$1</span>');
 }
 
+/* Apply design tokens from data.design to :root CSS variables. */
+function applyDesign(design) {
+  if (!design) design = {};
+  const root = document.documentElement.style;
+  // Primary color (light + dark variants)
+  if (design.primary) root.setProperty('--primary', design.primary);
+  if (design.primary_dark) {
+    // We can't set per-class scoped vars from JS easily;
+    // override in dark via the style element below.
+    let darkStyle = document.getElementById('dark-overrides');
+    if (!darkStyle) {
+      darkStyle = document.createElement('style');
+      darkStyle.id = 'dark-overrides';
+      document.head.appendChild(darkStyle);
+    }
+    darkStyle.textContent = 'html.dark { --primary: ' + design.primary_dark + '; }';
+  }
+  // Fonts
+  if (design.font_sans && FONT_STACKS[design.font_sans]) {
+    root.setProperty('--font-sans', FONT_STACKS[design.font_sans]);
+  }
+  if (design.font_mono && MONO_STACKS[design.font_mono]) {
+    root.setProperty('--font-mono', MONO_STACKS[design.font_mono]);
+  }
+  // Sizes
+  if (design.base_font_size) root.setProperty('--base-size', design.base_font_size + 'px');
+  if (design.name_font_size) root.setProperty('--name-size', design.name_font_size + 'px');
+  // Weights
+  if (design.heading_weight) root.setProperty('--heading-weight', design.heading_weight);
+  if (design.bold_weight) root.setProperty('--bold-weight', design.bold_weight);
+  if (design.tag_weight) root.setProperty('--tag-weight', design.tag_weight);
+}
+
 function render() {
   if (!DATA) return;
   const p = DATA.profile || {};
+
+  // Apply design tokens FIRST
+  applyDesign(DATA.design || {});
 
   document.title = p.name || 'Personal Homepage';
 
@@ -148,7 +200,7 @@ function render() {
       card.className = 'pub-card';
       const tags = [];
       if (pub.venue_tag) tags.push('<span class="tag">' + escapeHtml(pub.venue_tag) + '</span>');
-      if (pub.type_tag) tags.push('<span class="tag">' + escapeHtml(pub.type_tag) + '</span>');
+      if (pub.type_tag) tags.push('<span class="tag type">' + escapeHtml(pub.type_tag) + '</span>');
       if (pub.highlight) tags.push('<span class="tag highlight">' + escapeHtml(pub.highlight) + '</span>');
       card.innerHTML =
         '<div class="pub-image">' + (pub.image ? '<img src="' + escapeHtml(pub.image) + '" alt="">' : '') + '</div>' +
@@ -208,8 +260,31 @@ function render() {
   });
 }
 
+/* ---- Live-preview support ----
+   When this page is loaded inside the admin iframe,
+   the parent posts {type:'data', payload: {...}} on every change.
+   We re-render immediately with the supplied data. */
+window.addEventListener('message', (e) => {
+  if (!e.data || typeof e.data !== 'object') return;
+  if (e.data.type === 'data' && e.data.payload) {
+    DATA = e.data.payload;
+    render();
+    // Acknowledge so admin can show "synced"
+    try { e.source.postMessage({ type: 'rendered' }, '*'); } catch (err) {}
+  }
+});
+
 async function init() {
   setupTheme();
+
+  // If running inside admin iframe, wait for postMessage instead of fetching
+  const inIframe = window.self !== window.top;
+  if (inIframe) {
+    // Signal to parent we're ready
+    try { window.parent.postMessage({ type: 'ready' }, '*'); } catch (e) {}
+    return;
+  }
+
   try {
     const res = await fetch('data.json?v=' + Date.now());
     if (!res.ok) throw new Error('Failed to load data.json');

@@ -1,9 +1,9 @@
 /* ============================================================
-   admin.js — GitHub API based editor
+   admin.js — GitHub API editor + live preview
    ============================================================
-   Authenticates with a GitHub Personal Access Token,
-   loads /data.json from the repo, lets the user edit through a
-   form, and commits changes back via the contents API.
+   Edits commit to GitHub via the Contents API.
+   Form changes are debounced and posted to the preview iframe
+   for instant feedback (no GitHub round-trip required).
    ============================================================ */
 
 const $ = (sel, root) => (root || document).querySelector(sel);
@@ -58,8 +58,8 @@ async function verifyToken(token, repo) {
     }
   });
   if (!res.ok) {
-    if (res.status === 401) throw new Error('Invalid token (401). Make sure the PAT has not expired.');
-    if (res.status === 404) throw new Error('Repository not found, or token lacks access. Check the repo name and PAT scopes.');
+    if (res.status === 401) throw new Error('Invalid token (401). PAT may be expired.');
+    if (res.status === 404) throw new Error('Repository not found or token lacks access.');
     throw new Error('GitHub returned ' + res.status);
   }
   const data = await res.json();
@@ -85,7 +85,13 @@ async function putFile(path, content, sha, message) {
 }
 
 // ---- State ----
-const STATE = { config: null, data: null, sha: null };
+const STATE = {
+  config: null,
+  data: null,
+  sha: null,
+  dirty: false,
+  previewReady: false
+};
 
 // ---- Path bindings ----
 function getByPath(obj, path) {
@@ -109,6 +115,8 @@ function fillBindings() {
     if (el.type === 'checkbox') el.checked = !!v;
     else el.value = v == null ? '' : v;
   });
+  // Design tokens — fill the design controls too
+  fillDesignControls();
 }
 
 function collectBindings() {
@@ -122,7 +130,44 @@ function collectBindings() {
   });
 }
 
-// ---- Lists ----
+/* ---- Design controls ---- */
+function fillDesignControls() {
+  const d = STATE.data.design || {};
+  $$('[data-design]').forEach(el => {
+    const key = el.getAttribute('data-design');
+    if (d[key] != null) el.value = d[key];
+  });
+  $$('[data-design-text]').forEach(el => {
+    const key = el.getAttribute('data-design-text');
+    if (d[key] != null) el.value = d[key];
+  });
+  // Update slider displays
+  $$('[data-show]').forEach(el => {
+    const key = el.getAttribute('data-show');
+    if (d[key] != null) el.textContent = d[key];
+  });
+  // Highlight active preset swatch
+  $$('[data-preset-target]').forEach(group => {
+    const key = group.getAttribute('data-preset-target');
+    const cur = (d[key] || '').toLowerCase();
+    $$('.preset-swatch', group).forEach(sw => {
+      sw.classList.toggle('active', (sw.getAttribute('data-color') || '').toLowerCase() === cur);
+    });
+  });
+}
+
+function collectDesign() {
+  if (!STATE.data.design) STATE.data.design = {};
+  $$('[data-design]').forEach(el => {
+    const key = el.getAttribute('data-design');
+    let v = el.value;
+    // Coerce numeric sliders
+    if (el.type === 'range' || el.type === 'number') v = Number(v);
+    STATE.data.design[key] = v;
+  });
+}
+
+/* ---- Lists ---- */
 const LIST_SCHEMAS = {
   links: {
     container: '#links-list',
@@ -146,9 +191,9 @@ const LIST_SCHEMAS = {
     container: '#news-list-edit',
     label: 'News item',
     fields: [
-      { key: 'date', label: 'Date (e.g., Nov 2025)', type: 'text' },
-      { key: 'highlight', label: 'Highlight (bold)', type: 'checkbox' },
-      { key: 'text', label: 'Text (supports [text](url) markdown links)', type: 'textarea', full: true }
+      { key: 'date', label: 'Date', type: 'text' },
+      { key: 'highlight', label: 'Bold/highlight', type: 'checkbox' },
+      { key: 'text', label: 'Text (supports [link](url))', type: 'textarea', full: true }
     ]
   },
   publications: {
@@ -157,9 +202,9 @@ const LIST_SCHEMAS = {
     fields: [
       { key: 'title', label: 'Title', type: 'text', full: true },
       { key: 'authors', label: 'Authors (your name auto-bolded)', type: 'text', full: true },
-      { key: 'venue_tag', label: 'Venue tag (e.g., WSDM 2026)', type: 'text' },
-      { key: 'type_tag', label: 'Type tag (e.g., Full Paper)', type: 'text' },
-      { key: 'highlight', label: 'Highlight tag (e.g., Honorable Mention)', type: 'text', full: true },
+      { key: 'venue_tag', label: 'Venue tag', type: 'text' },
+      { key: 'type_tag', label: 'Type tag', type: 'text' },
+      { key: 'highlight', label: 'Highlight tag (optional)', type: 'text', full: true },
       { key: 'image', label: 'Image path', type: 'text' },
       { key: 'pdf_url', label: 'PDF URL', type: 'text' }
     ]
@@ -169,7 +214,7 @@ const LIST_SCHEMAS = {
     label: 'Project',
     fields: [
       { key: 'title', label: 'Title', type: 'text' },
-      { key: 'authors', label: 'Authors (your name auto-bolded)', type: 'text' },
+      { key: 'authors', label: 'Authors', type: 'text' },
       { key: 'image', label: 'Image path', type: 'text' },
       { key: 'url', label: 'URL', type: 'text' },
       { key: 'description', label: 'Description', type: 'textarea', full: true },
@@ -280,14 +325,49 @@ function collectLists() {
   });
 }
 
-// ---- Event wiring ----
+/* ---- Live preview sync ---- */
+let previewTimer = null;
+function syncPreview(immediate) {
+  clearTimeout(previewTimer);
+  const send = () => {
+    collectLists();
+    collectBindings();
+    collectDesign();
+    const iframe = $('#preview-frame');
+    if (iframe && iframe.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage({ type: 'data', payload: STATE.data }, '*');
+        $('#preview-status').textContent = '● synced';
+        $('#preview-status').style.color = 'var(--muted-foreground)';
+      } catch (e) {}
+    }
+    markDirty();
+  };
+  if (immediate) send();
+  else previewTimer = setTimeout(send, 80);
+}
+
+function markDirty() {
+  STATE.dirty = true;
+  const btn = $('#save-btn');
+  if (btn) btn.classList.add('dirty');
+}
+function clearDirty() {
+  STATE.dirty = false;
+  const btn = $('#save-btn');
+  if (btn) btn.classList.remove('dirty');
+}
+
+/* ---- Event wiring ---- */
 function wireEvents() {
+  // Add buttons
   $$('[data-add]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const key = btn.getAttribute('data-add');
       collectLists();
       collectBindings();
+      collectDesign();
       const blank = {};
       LIST_SCHEMAS[key].fields.forEach(f => {
         if (f.type === 'checkbox') blank[f.key] = false;
@@ -297,9 +377,11 @@ function wireEvents() {
       if (!Array.isArray(STATE.data[key])) STATE.data[key] = [];
       STATE.data[key].push(blank);
       renderList(key);
+      syncPreview(true);
     });
   });
 
+  // List item actions
   Object.keys(LIST_SCHEMAS).forEach(key => {
     const container = $(LIST_SCHEMAS[key].container);
     container.addEventListener('click', (e) => {
@@ -320,12 +402,72 @@ function wireEvents() {
         const tmp = arr[idx + 1]; arr[idx + 1] = arr[idx]; arr[idx] = tmp;
       }
       renderList(key);
+      syncPreview(true);
+    });
+    // Live sync on any input change inside lists
+    container.addEventListener('input', () => syncPreview());
+  });
+
+  // Input bindings
+  $$('[data-bind]').forEach(el => {
+    el.addEventListener('input', () => syncPreview());
+  });
+
+  // Design controls
+  $$('[data-design]').forEach(el => {
+    el.addEventListener('input', () => {
+      // If color picker, sync its text twin
+      const key = el.getAttribute('data-design');
+      const text = document.querySelector('[data-design-text="' + key + '"]');
+      if (text && el.type === 'color') text.value = el.value;
+      // Update displays
+      $$('[data-show="' + key + '"]').forEach(s => {
+        s.textContent = el.value + (key.indexOf('size') > -1 ? 'px' : '');
+      });
+      // Update preset highlight
+      const group = document.querySelector('[data-preset-target="' + key + '"]');
+      if (group) {
+        $$('.preset-swatch', group).forEach(sw => {
+          sw.classList.toggle('active', (sw.getAttribute('data-color') || '').toLowerCase() === el.value.toLowerCase());
+        });
+      }
+      syncPreview();
+    });
+  });
+  // Hex text inputs that mirror color pickers
+  $$('[data-design-text]').forEach(el => {
+    el.addEventListener('input', () => {
+      const key = el.getAttribute('data-design-text');
+      const v = el.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        const picker = document.querySelector('[data-design="' + key + '"]');
+        if (picker) picker.value = v;
+        syncPreview();
+      }
+    });
+  });
+  // Preset swatches
+  $$('.preset-swatch').forEach(sw => {
+    sw.addEventListener('click', (e) => {
+      e.preventDefault();
+      const group = sw.closest('[data-preset-target]');
+      if (!group) return;
+      const key = group.getAttribute('data-preset-target');
+      const color = sw.getAttribute('data-color');
+      const picker = document.querySelector('[data-design="' + key + '"]');
+      const text = document.querySelector('[data-design-text="' + key + '"]');
+      if (picker) picker.value = color;
+      if (text) text.value = color;
+      // Mark active
+      $$('.preset-swatch', group).forEach(s => s.classList.toggle('active', s === sw));
+      syncPreview(true);
     });
   });
 
+  // Action buttons
   $('#save-btn').addEventListener('click', save);
   $('#reload-btn').addEventListener('click', async () => {
-    if (!confirm('Discard local changes and re-fetch from GitHub?')) return;
+    if (STATE.dirty && !confirm('Discard local changes and re-fetch from GitHub?')) return;
     await loadData();
   });
   $('#logout-btn').addEventListener('click', () => {
@@ -337,6 +479,21 @@ function wireEvents() {
   $('#login-btn').addEventListener('click', login);
   $('#pat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
   $('#repo-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+  // Listen for preview iframe handshake
+  window.addEventListener('message', (e) => {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'ready') {
+      STATE.previewReady = true;
+      // Send initial data when iframe announces it's ready
+      if (STATE.data) syncPreview(true);
+    }
+  });
+
+  // Warn before unload if dirty
+  window.addEventListener('beforeunload', (e) => {
+    if (STATE.dirty) { e.preventDefault(); e.returnValue = ''; }
+  });
 }
 
 async function login() {
@@ -353,7 +510,7 @@ async function login() {
     return;
   }
   if (!/^[^/\s]+\/[^/\s]+$/.test(repo)) {
-    errEl.textContent = 'Repository should be in the form "owner/repo".';
+    errEl.textContent = 'Repository should be in "owner/repo" form.';
     errEl.style.display = '';
     return;
   }
@@ -377,31 +534,55 @@ async function login() {
   }
 }
 
+function ensureDataDefaults() {
+  if (!STATE.data.profile) STATE.data.profile = {};
+  if (!STATE.data.footer) STATE.data.footer = {};
+  ['links', 'nav_links', 'news', 'publications', 'projects'].forEach(k => {
+    if (!Array.isArray(STATE.data[k])) STATE.data[k] = [];
+  });
+  if (typeof STATE.data.about !== 'string') STATE.data.about = '';
+  // Default design
+  const defaults = {
+    primary: '#dc2626',
+    primary_dark: '#f87171',
+    font_sans: 'system',
+    font_mono: 'system',
+    base_font_size: 16,
+    name_font_size: 36,
+    heading_weight: 500,
+    bold_weight: 700,
+    tag_weight: 500
+  };
+  if (!STATE.data.design) STATE.data.design = {};
+  Object.keys(defaults).forEach(k => {
+    if (STATE.data.design[k] == null) STATE.data.design[k] = defaults[k];
+  });
+}
+
 async function loadData() {
   setStatus('Loading data.json from ' + STATE.config.repo + '@' + STATE.config.branch + '...');
   try {
     const file = await fetchFile('data.json');
     STATE.sha = file.sha;
     STATE.data = JSON.parse(file.content);
-    if (!STATE.data.profile) STATE.data.profile = {};
-    if (!STATE.data.footer) STATE.data.footer = {};
-    ['links', 'nav_links', 'news', 'publications', 'projects'].forEach(k => {
-      if (!Array.isArray(STATE.data[k])) STATE.data[k] = [];
-    });
-    if (typeof STATE.data.about !== 'string') STATE.data.about = '';
+    ensureDataDefaults();
 
     fillBindings();
     renderAllLists();
+    clearDirty();
     setStatus('Loaded. Connected to ' + STATE.config.repo + '@' + STATE.config.branch + '.');
+    // Push to preview
+    if (STATE.previewReady) syncPreview(true);
   } catch (e) {
     setStatus('Error: ' + e.message);
-    showToast('Failed to load data.json. Does it exist in the repo?', 'error');
+    showToast('Failed to load data.json. Does it exist?', 'error');
   }
 }
 
 async function save() {
   collectLists();
   collectBindings();
+  collectDesign();
   const btn = $('#save-btn');
   btn.disabled = true;
   btn.textContent = 'Saving...';
@@ -412,8 +593,9 @@ async function save() {
       'Update site content via admin (' + new Date().toISOString() + ')'
     );
     STATE.sha = result.content.sha;
+    clearDirty();
     showToast('Saved. GitHub Pages will rebuild in 30-60s.');
-    setStatus('Last saved ' + new Date().toLocaleTimeString() + '. GitHub Pages typically rebuilds in 30-60s.');
+    setStatus('Last saved ' + new Date().toLocaleTimeString() + '. GitHub Pages rebuilds in 30-60s.');
   } catch (e) {
     showToast(e.message, 'error');
     setStatus('Save failed: ' + e.message);

@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin · Edit Site</title>
   <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="../styles.css">
   <script>
     (function(){
@@ -20,55 +24,156 @@
     })();
   </script>
 </head>
-<body class="antialiased">
-  <div class="min-h-screen bg-background">
+<body class="antialiased admin-body">
 
-    <div id="login-overlay" class="login-overlay">
-      <div class="login-card">
-        <h1>Sign in to edit</h1>
-        <p>
-          This page edits your homepage via the GitHub API. You'll need a
-          <strong>Personal Access Token (PAT)</strong> with <code>repo</code>
-          scope so it can commit to your <code>username.github.io</code> repo.
-          See the README for setup instructions.
-        </p>
-        <div class="field">
-          <label for="pat-input">GitHub Personal Access Token</label>
-          <input id="pat-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="repo-input">Repository (owner/repo)</label>
-          <input id="repo-input" type="text" placeholder="username/username.github.io">
-        </div>
-        <div class="field">
-          <label for="branch-input">Branch</label>
-          <input id="branch-input" type="text" value="main">
-        </div>
-        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap: wrap;">
-          <button class="btn btn-primary" id="login-btn">Sign in</button>
-          <label style="display:flex; gap:0.375rem; align-items:center; font-size:0.85rem; color:var(--muted-foreground);">
-            <input type="checkbox" id="remember-pat" checked style="width:auto;">
-            Remember on this device
-          </label>
-        </div>
-        <p id="login-error" style="color: var(--primary); display:none; margin-top: 0.75rem; font-size:0.85rem;"></p>
+  <!-- Login overlay -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <h1>Sign in to edit</h1>
+      <p>
+        Edits commit to GitHub via the API. You need a
+        <strong>Personal Access Token (PAT)</strong> with write access to your
+        <code>username.github.io</code> repo. See the README for setup.
+      </p>
+      <div class="field">
+        <label for="pat-input">GitHub Personal Access Token</label>
+        <input id="pat-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
       </div>
+      <div class="field">
+        <label for="repo-input">Repository (owner/repo)</label>
+        <input id="repo-input" type="text" placeholder="username/username.github.io">
+      </div>
+      <div class="field">
+        <label for="branch-input">Branch</label>
+        <input id="branch-input" type="text" value="main">
+      </div>
+      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="login-btn">Sign in</button>
+        <label style="display:flex; gap:0.375rem; align-items:center; font-size:0.85rem; color:var(--muted-foreground);">
+          <input type="checkbox" id="remember-pat" checked style="width:auto;">
+          Remember on this device
+        </label>
+      </div>
+      <p id="login-error" style="color: var(--primary); display:none; margin-top:0.75rem; font-size:0.85rem;"></p>
     </div>
+  </div>
 
-    <div id="admin-root" style="display:none;">
+  <!-- Main two-pane layout -->
+  <div id="admin-root" class="admin-shell" style="display:none;">
+
+    <!-- Edit pane -->
+    <div class="admin-pane">
       <div class="admin-container">
         <div class="admin-header">
           <h1>Edit Homepage</h1>
           <div class="admin-actions">
-            <a class="btn btn-sm" href="../" target="_blank" rel="noopener">View site</a>
             <button class="btn btn-sm" id="reload-btn" title="Re-fetch from GitHub">Reload</button>
             <button class="btn btn-sm btn-danger" id="logout-btn">Sign out</button>
             <button class="btn btn-primary btn-sm" id="save-btn">Save changes</button>
           </div>
         </div>
 
-        <div id="status-line" style="margin-bottom:1rem; font-size:0.85rem; color:var(--muted-foreground);"></div>
+        <div id="status-line" style="margin-bottom:1rem; font-size:0.8rem; color:var(--muted-foreground);"></div>
 
+        <!-- Design Tokens (NEW) -->
+        <div class="admin-section">
+          <h2>
+            <span>🎨 Design — Color &amp; Typography</span>
+          </h2>
+
+          <div class="field">
+            <label>Accent color (light mode)</label>
+            <div class="color-field">
+              <input type="color" data-design="primary" value="#dc2626">
+              <input type="text" data-design-text="primary" value="#dc2626" pattern="^#[0-9a-fA-F]{6}$">
+            </div>
+            <div class="preset-row" data-preset-target="primary">
+              <button class="preset-swatch" style="background:#dc2626" data-color="#dc2626" title="Red"></button>
+              <button class="preset-swatch" style="background:#ea580c" data-color="#ea580c" title="Orange"></button>
+              <button class="preset-swatch" style="background:#d97706" data-color="#d97706" title="Amber"></button>
+              <button class="preset-swatch" style="background:#65a30d" data-color="#65a30d" title="Lime"></button>
+              <button class="preset-swatch" style="background:#059669" data-color="#059669" title="Emerald"></button>
+              <button class="preset-swatch" style="background:#0891b2" data-color="#0891b2" title="Cyan"></button>
+              <button class="preset-swatch" style="background:#2563eb" data-color="#2563eb" title="Blue"></button>
+              <button class="preset-swatch" style="background:#7c3aed" data-color="#7c3aed" title="Violet"></button>
+              <button class="preset-swatch" style="background:#db2777" data-color="#db2777" title="Pink"></button>
+              <button class="preset-swatch" style="background:#525252" data-color="#525252" title="Gray"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Accent color (dark mode)</label>
+            <div class="color-field">
+              <input type="color" data-design="primary_dark" value="#f87171">
+              <input type="text" data-design-text="primary_dark" value="#f87171">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Sans-serif font</label>
+              <select data-design="font_sans">
+                <option value="system">System (Pretendard/SF)</option>
+                <option value="inter">Inter</option>
+                <option value="pretendard">Pretendard</option>
+                <option value="ibm_plex">IBM Plex Sans</option>
+                <option value="manrope">Manrope</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Mono font (dates, code)</label>
+              <select data-design="font_mono">
+                <option value="system">System</option>
+                <option value="jetbrains">JetBrains Mono</option>
+                <option value="ibm_plex_mono">IBM Plex Mono</option>
+                <option value="source_code">Source Code Pro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Base font size <span class="slider-value" data-show="base_font_size">16px</span></label>
+            <div class="slider-field">
+              <input type="range" data-design="base_font_size" min="14" max="20" step="1" value="16">
+              <span class="slider-value" data-show="base_font_size">16</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Name size (sidebar) <span class="slider-value" data-show="name_font_size">36px</span></label>
+            <div class="slider-field">
+              <input type="range" data-design="name_font_size" min="24" max="44" step="1" value="36">
+              <span class="slider-value" data-show="name_font_size">36</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Heading weight <span class="slider-value" data-show="heading_weight">500</span></label>
+              <div class="slider-field">
+                <input type="range" data-design="heading_weight" min="400" max="800" step="100" value="500">
+                <span class="slider-value" data-show="heading_weight">500</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Bold text weight <span class="slider-value" data-show="bold_weight">700</span></label>
+              <div class="slider-field">
+                <input type="range" data-design="bold_weight" min="500" max="900" step="100" value="700">
+                <span class="slider-value" data-show="bold_weight">700</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Tag font weight <span class="slider-value" data-show="tag_weight">500</span></label>
+            <div class="slider-field">
+              <input type="range" data-design="tag_weight" min="400" max="700" step="100" value="500">
+              <span class="slider-value" data-show="tag_weight">500</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile -->
         <div class="admin-section">
           <h2><span>Profile</span></h2>
           <div class="field-row">
@@ -77,23 +182,25 @@
           </div>
           <div class="field-row">
             <div class="field"><label>Title (e.g., M.S. Student at)</label><input data-bind="profile.title"></div>
-            <div class="field"><label>Affiliation (e.g., POSTECH)</label><input data-bind="profile.affiliation"></div>
+            <div class="field"><label>Affiliation</label><input data-bind="profile.affiliation"></div>
           </div>
           <div class="field-row">
             <div class="field"><label>Lab name</label><input data-bind="profile.lab_name"></div>
             <div class="field"><label>Lab URL</label><input data-bind="profile.lab_url"></div>
           </div>
-          <div class="field"><label>Photo path (e.g., assets/profile.jpg)</label><input data-bind="profile.photo"></div>
+          <div class="field"><label>Photo path</label><input data-bind="profile.photo"></div>
         </div>
 
+        <!-- About -->
         <div class="admin-section">
           <h2><span>About</span></h2>
           <div class="field">
-            <label>About paragraph (supports [text](url) markdown links)</label>
+            <label>About (supports [text](url) links)</label>
             <textarea data-bind="about" rows="5"></textarea>
           </div>
         </div>
 
+        <!-- Sidebar Links -->
         <div class="admin-section">
           <h2>
             <span>Sidebar Links</span>
@@ -102,6 +209,7 @@
           <div id="links-list"></div>
         </div>
 
+        <!-- News -->
         <div class="admin-section">
           <h2>
             <span>News</span>
@@ -110,6 +218,7 @@
           <div id="news-list-edit"></div>
         </div>
 
+        <!-- Publications -->
         <div class="admin-section">
           <h2>
             <span>Publications</span>
@@ -118,6 +227,7 @@
           <div id="pubs-list-edit"></div>
         </div>
 
+        <!-- Projects -->
         <div class="admin-section">
           <h2>
             <span>Projects</span>
@@ -126,6 +236,7 @@
           <div id="projects-list-edit"></div>
         </div>
 
+        <!-- Nav Links -->
         <div class="admin-section">
           <h2>
             <span>Top Nav Links</span>
@@ -134,6 +245,7 @@
           <div id="nav-list-edit"></div>
         </div>
 
+        <!-- Footer -->
         <div class="admin-section">
           <h2><span>Footer</span></h2>
           <div class="field-row">
@@ -141,11 +253,21 @@
             <div class="field"><label>Name</label><input data-bind="footer.name"></div>
           </div>
         </div>
+
       </div>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <!-- Live preview pane -->
+    <div class="preview-pane">
+      <div class="preview-toolbar">
+        <span>Live preview</span>
+        <span class="preview-status" id="preview-status">●</span>
+      </div>
+      <iframe id="preview-frame" src="../index.html" title="Preview"></iframe>
+    </div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script src="admin.js"></script>
 </body>
