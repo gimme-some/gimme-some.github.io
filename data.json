@@ -60,6 +60,11 @@
       "text": "I joined Data Science Lab at Chung-Ang University as an M.S. student."
     },
     {
+      "date": "Feb 2026",
+      "highlight": false,
+      "text": "I attended WSDM 2026 at Boise, Idaho, USA."
+    },
+    {
       "date": "Nov 2025",
       "highlight": true,
       "text": "'ARROW: Adaptive Reasoning for LLM-based Recommendation with Explainability' has been accepted to WSDM 2026!"
