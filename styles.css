@@ -419,7 +419,7 @@ html.dark .pub-action:hover {
 #footer-text {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: clamp(0.75rem, 2.6vw, 0.875rem);
+  font-size: clamp(0.7rem, 3.2vw, 0.875rem);
   line-height: 1.4;
   word-break: keep-all;       /* avoid splitting Korean syllables / short words */
   overflow-wrap: anywhere;    /* but allow breaks anywhere if truly necessary */
@@ -436,6 +436,16 @@ html.dark .pub-action:hover {
 }
 .footer-icons a:hover { background: var(--muted); color: var(--foreground); }
 .footer-icons svg { width: 1rem; height: 1rem; }
+
+/* On narrow viewports, shrink the footer's padding and icon footprint so
+   normal-length names (~20 characters) keep fitting on a single line. The
+   wrap fallback above still handles truly long names. */
+@media (max-width: 480px) {
+  .footer-inner { padding: 1.25rem 1rem; gap: 0.5rem; }
+  .footer-icons { gap: 0.125rem; }
+  .footer-icons a { width: 1.625rem; height: 1.625rem; }
+  .footer-icons svg { width: 0.875rem; height: 0.875rem; }
+}
  
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
