@@ -1,70 +1,56 @@
-# Personal Homepage v2
-
-`suwonyoon.com` 디자인을 정교하게 복제한 개인 홈페이지 + **실시간 미리보기**가 있는 admin 편집기.
-
-## v2의 새 기능
-
-- **🎨 Design 섹션** — admin에서 액센트 컬러(light/dark), 폰트, 폰트 크기, 굵기를 직접 조절. 10가지 컬러 프리셋 + 컬러 피커.
-- **⚡ 라이브 프리뷰** — admin 페이지 우측에 사이트가 iframe으로 표시되며, 어떤 변경이든 즉시(80ms debounce) 반영. GitHub 저장 전에 결과 확인 가능.
-- **디자인 디테일 개선** — Paper PDF 버튼 그림자, type tag 흰 배경, 더 굵은 bold weight, mono 폰트 조정, sidebar 너비 확장(긴 이름 한 줄 유지).
-- **Pretendard 자동 로드** — 한국어 폰트가 깔끔하게 표시됨.
-
-## 디렉토리 구조
-
+# Personal Homepage
+ 
+A minimalist academic homepage template, hosted on GitHub Pages. Comes with an in-browser admin panel for editing content, design, and images — no rebuild, no local setup, no SSG required.
+ 
+## Features
+ 
+- **Static site, zero build step.** Plain HTML, CSS, and vanilla JS. Hosts cleanly on GitHub Pages for free.
+- **JSON-driven content.** All page content lives in `data.json`. Edit by hand, or use the admin panel.
+- **Admin panel with live preview.** Visit `/admin/` to edit the site. Sign in with a GitHub Personal Access Token; changes commit to your repo. A right-pane preview reflects edits instantly (no GitHub round trip).
+- **Design controls.** Accent colors (light & dark mode), font families, font sizes, and weights are tunable from the admin panel. Choose from a curated set of fonts loaded via Google Fonts and Pretendard.
+- **Image upload.** Profile photo, publication thumbnails, and project images can be uploaded directly from the admin panel. Old images at the same slot are replaced automatically, so the `assets/` folder stays tidy.
+- **Light & dark mode.** A theme toggle is built in, with the user's preference persisted.
+- **Korean-friendly typography.** Pretendard is the default sans-serif, with English fallbacks chosen to feel consistent across scripts.
+## Structure
+ 
 ```
 .
-├── index.html              # 메인 페이지
-├── styles.css              # 디자인 토큰 + admin 스타일
-├── render.js               # data.json 렌더링 + postMessage 라이브 프리뷰 수신
-├── data.json               # 모든 컨텐츠 + design 토큰
+├── index.html              # main page
+├── styles.css              # design tokens + layout
+├── render.js               # reads data.json and renders the page
+├── data.json               # all site content + design tokens
 ├── .nojekyll
 ├── admin/
-│   ├── index.html          # 2-pane 편집기 + 라이브 프리뷰
-│   └── admin.js            # GitHub API + postMessage
+│   ├── index.html          # admin editor + live preview
+│   └── admin.js            # GitHub API client + form bindings
 └── assets/
     ├── profile.svg
     ├── paper-placeholder.svg
     └── project-placeholder.svg
 ```
-
-## 셋업 (기존과 동일)
-
-이미 `gimme-some.github.io` 레포가 있으면 기존 파일을 이 v2로 **덮어쓰기**만 하면 됩니다. `data.json`은 기존 내용에 `design` 객체만 추가하면 자동으로 작동합니다.
-
-기존 `data.json`에 다음을 추가하면 v2의 모든 기능이 활성화됩니다:
-
-```json
-{
-  "design": {
-    "primary": "#dc2626",
-    "primary_dark": "#f87171",
-    "font_sans": "system",
-    "font_mono": "system",
-    "base_font_size": 16,
-    "name_font_size": 36,
-    "heading_weight": 500,
-    "bold_weight": 700,
-    "tag_weight": 500
-  },
-  ...
-}
-```
-
-자동으로 기본값이 채워지긴 하지만, 명시적으로 넣어두는 게 안전합니다.
-
-## 데이터 스키마 변경점
-
-- `design` 객체 추가 (모든 키 optional, 누락 시 기본값)
-- 나머지는 v1과 동일
-
-## 라이브 프리뷰 동작 원리
-
-1. admin/index.html에 `<iframe src="../index.html">`이 우측에 떠 있음
-2. iframe의 render.js가 자기가 iframe 안에 있는 걸 감지 → `data.json` fetch 안 함
-3. admin.js의 input change 핸들러가 80ms debounce 후 `postMessage({type:'data', payload: STATE.data})`
-4. iframe의 render.js가 메시지 받아서 즉시 `applyDesign()` + `render()`
-5. **결과**: 슬라이더/색상 피커 움직이는 즉시 우측에 반영됨
-
-## 라이센스
-
-자유롭게 사용/수정하세요.
+ 
+## Setup
+ 
+1. Create a GitHub repository named `<your-username>.github.io`.
+2. Copy these files into the repo and push.
+3. Go to **Settings → Pages** and confirm Pages is serving from the `main` branch.
+4. Visit `https://<your-username>.github.io` to see the site, and `/admin/` to edit it.
+To sign in to the admin panel, create a GitHub Personal Access Token with `contents:write` permission on this repository, then paste it into the login form.
+ 
+## Editing content
+ 
+Either:
+ 
+- Edit `data.json` directly and push, or
+- Use `/admin/` for a form-based editor that commits to GitHub on save.
+The schema covers profile information, an about section, a list of links, news entries, publications, and projects. The `design` object holds theme tokens (colors, fonts, sizes, weights); all keys are optional and fall back to sensible defaults.
+ 
+## Notes
+ 
+- Image uploads commit to `assets/<slot>.<ext>` (e.g., `assets/pub-0.png`). Re-uploading at the same slot overwrites the previous file, so nothing accumulates.
+- After saving, GitHub Pages takes 30–60 seconds to rebuild before changes are live at your URL. The admin panel's live preview, however, updates immediately.
+- The admin panel runs entirely in the browser; no server is involved beyond GitHub's API.
+## License
+ 
+Made by Min-Seong Kim (gimme-some)
+Free to use, modify, and adapt.
