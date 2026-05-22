@@ -410,7 +410,14 @@ html.dark .pub-action:hover {
 .footer-inner {
   max-width: 64rem; margin: 0 auto; padding: 1.5rem;
   display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
   font-size: 0.875rem; color: var(--muted-foreground);
+}
+#footer-text {
+  white-space: nowrap;       /* keep "© 2026 <name>" on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* graceful truncation for very long names */
+  min-width: 0;              /* allow shrinking inside the flex row */
 }
 .footer-icons { display: flex; gap: 0.25rem; }
 .footer-icons a {
@@ -421,6 +428,16 @@ html.dark .pub-action:hover {
 }
 .footer-icons a:hover { background: var(--muted); color: var(--foreground); }
 .footer-icons svg { width: 1rem; height: 1rem; }
+
+/* On very narrow screens, stack vertically so even long names stay readable. */
+@media (max-width: 420px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  #footer-text { white-space: normal; }
+}
  
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
