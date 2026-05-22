@@ -617,20 +617,37 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;   // 5 MB; GitHub Contents API limit i
 const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
 
 function findUploadTarget(btn) {
-  // Strategy: btn lives next to an input that holds the current image path.
-  // We look at the same .field or .field-row scope for the nearest text input.
-  const field = btn.closest('.field, .field-row, .list-item') || document;
-  const candidates = field.querySelectorAll('input[type="text"]');
-  // Prefer the one explicitly tagged
+  // Strategy: the button lives next to an input that holds the current image path.
+  // Look in the nearest .field / .field-row / .list-item scope.
+  // Important: our text inputs often omit the `type` attribute (HTML defaults to
+  // "text" but `[type="text"]` only matches when the attribute is present), so we
+  // accept any <input> that isn't an explicitly non-text type.
+  const field = btn.closest('.field, .input-with-action, .field-row, .list-item') || document;
+  const all = Array.from(field.querySelectorAll('input'));
+  const candidates = all.filter(inp => {
+    const t = (inp.getAttribute('type') || 'text').toLowerCase();
+    return t === 'text' || t === '';
+  });
+
+  // Prefer explicit data-upload-target
   const explicit = btn.getAttribute('data-upload-target');
   if (explicit) {
     const el = field.querySelector(explicit) || document.querySelector(explicit);
     if (el) return el;
   }
-  // Otherwise pick the first text input that contains a path-looking string
+
+  // Look for the input whose data-bind or data-field key contains "image" or "photo"
+  for (const c of candidates) {
+    const bind = (c.getAttribute('data-bind') || '') + ' ' + (c.getAttribute('data-field') || '');
+    if (/photo|image/i.test(bind)) return c;
+  }
+
+  // Otherwise pick an input whose current value looks like an image path
   for (const c of candidates) {
     if (c.value && /\.(jpg|jpeg|png|webp|gif|svg)/i.test(c.value)) return c;
   }
+
+  // Last resort: first text-like input in the scope
   return candidates[0] || null;
 }
 
@@ -710,13 +727,30 @@ function pickFile() {
     input.type = 'file';
     input.accept = 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml';
     input.style.display = 'none';
+    let resolved = false;
+    function cleanup() {
+      if (input.parentNode) input.parentNode.removeChild(input);
+    }
     input.addEventListener('change', () => {
+      if (resolved) return;
+      resolved = true;
       const f = input.files && input.files[0];
-      document.body.removeChild(input);
+      cleanup();
       resolve(f || null);
     });
-    // If the user cancels, the change event won't fire. We can detect cancellation
-    // by listening to window focus, but it's not critical here — leftover input is harmless.
+    // Detect cancellation: when the dialog closes without picking anything,
+    // window gets focus back. We give the change event a moment to fire first.
+    function onFocus() {
+      window.removeEventListener('focus', onFocus);
+      setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve(null);
+      }, 300);
+    }
+    window.addEventListener('focus', onFocus);
+
     document.body.appendChild(input);
     input.click();
   });
