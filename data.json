@@ -3,12 +3,12 @@
     "name": "Min-Seong Kim",
     "title": "M.S. Student at",
     "lab_name": "Data Science Lab",
-    "lab_url": "https://example.com",
+    "lab_url": "https://sites.google.com/aicampus.cau.ac.kr/dsl/home",
     "affiliation": "Chung-Ang University",
     "location": "Seoul, South Korea",
     "photo": "assets/profile.svg"
   },
-  "about": "I am a 1st year M.S. student at Chung-Ang University, advised by Professor Yoon-Sik Cho at the [Data Science Lab](https://example.com).",
+  "about": "I am a 1st year M.S. student at Chung-Ang University, advised by Professor Yoon-Sik Cho at the [Data Science Lab](https://sites.google.com/aicampus.cau.ac.kr/dsl/home).",
   "design": {
     "primary": "#059669",
     "primary_dark": "#34d399",
@@ -26,27 +26,27 @@
     {
       "icon": "external-link",
       "label": "Data Science Lab",
-      "url": "https://example.com"
+      "url": "https://sites.google.com/aicampus.cau.ac.kr/dsl/home"
     },
     {
       "icon": "mail",
       "label": "Email",
-      "url": "mailto:your.email@example.com"
+      "url": "mailto:maruniverse@cau.ac.kr"
     },
     {
       "icon": "graduation-cap",
       "label": "Google Scholar",
-      "url": "https://scholar.google.com/"
+      "url": "https://scholar.google.com/citations?user=YngRnkkAAAAJ&hl=ko"
     },
     {
       "icon": "linkedin",
       "label": "LinkedIn",
-      "url": "https://linkedin.com/"
+      "url": "https://www.linkedin.com/in/min-seong-kim-2b9586410/"
     },
     {
       "icon": "github",
       "label": "GitHub",
-      "url": "https://github.com/"
+      "url": "https://github.com/gimme-some"
     },
     {
       "icon": "file-text",
