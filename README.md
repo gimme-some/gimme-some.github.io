@@ -1,6 +1,6 @@
 # Personal Homepage
 
-`suwonyoon.com` 디자인을 그대로 복제한 개인 홈페이지 템플릿입니다. **GitHub Pages**에서 무료로 영구 호스팅되며, `/admin` 페이지에서 **GitHub Personal Access Token (PAT)**으로 로그인해 내용을 직접 수정할 수 있습니다.
+개인 홈페이지 템플릿입니다. **GitHub Pages**에서 무료로 영구 호스팅되며, `/admin` 페이지에서 **GitHub Personal Access Token (PAT)**으로 로그인해 내용을 직접 수정할 수 있습니다.
 
 ## 구조
 
