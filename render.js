@@ -32,6 +32,31 @@ const MONO_STACKS = {
 
 let DATA = null;
 
+// Default placeholders used when a path is empty or fails to load.
+const PLACEHOLDERS = {
+  profile: 'assets/profile.svg',
+  paper:   'assets/paper-placeholder.svg',
+  project: 'assets/project-placeholder.svg'
+};
+
+/* Return a usable image path: trims whitespace, and falls back to the named
+   placeholder when the source is empty/missing. */
+function imageOrPlaceholder(src, kind) {
+  const s = (src || '').trim();
+  return s || PLACEHOLDERS[kind] || '';
+}
+
+/* HTML for an <img> tag with an onerror fallback to the placeholder.
+   The "data-fallback" attribute is read by the onerror handler. */
+function imgTag(src, kind, alt) {
+  const finalSrc = imageOrPlaceholder(src, kind);
+  const fallback = PLACEHOLDERS[kind] || '';
+  return '<img src="' + escapeHtml(finalSrc) + '"' +
+         ' alt="' + escapeHtml(alt || '') + '"' +
+         ' data-fallback="' + escapeHtml(fallback) + '"' +
+         ' onerror="if(this.src.indexOf(this.dataset.fallback)<0){this.src=this.dataset.fallback;}else{this.onerror=null;}">';
+}
+
 function setupTheme() {
   const btn = document.getElementById('theme-toggle');
   if (!btn) return;
@@ -130,7 +155,19 @@ function render() {
   }
 
   const photo = document.getElementById('profile-photo');
-  if (photo) { photo.src = p.photo || ''; photo.alt = p.name || ''; }
+  if (photo) {
+    const src = imageOrPlaceholder(p.photo, 'profile');
+    photo.src = src;
+    photo.alt = p.name || '';
+    photo.dataset.fallback = PLACEHOLDERS.profile;
+    photo.onerror = function() {
+      if (this.src.indexOf(this.dataset.fallback) < 0) {
+        this.src = this.dataset.fallback;
+      } else {
+        this.onerror = null;
+      }
+    };
+  }
 
   document.getElementById('profile-name').textContent = p.name || '';
 
@@ -204,7 +241,7 @@ function render() {
       if (pub.type_tag) tags.push('<span class="tag type">' + escapeHtml(pub.type_tag) + '</span>');
       if (pub.highlight) tags.push('<span class="tag highlight">' + escapeHtml(pub.highlight) + '</span>');
       card.innerHTML =
-        '<div class="pub-image">' + (pub.image ? '<img src="' + escapeHtml(pub.image) + '" alt="">' : '') + '</div>' +
+        '<div class="pub-image">' + imgTag(pub.image, 'paper', pub.title) + '</div>' +
         '<div>' +
           '<h3 class="pub-title">' + escapeHtml(pub.title) + '</h3>' +
           '<p class="pub-authors">' + highlightSelf(pub.authors, p.name || '') + '</p>' +
@@ -233,7 +270,7 @@ function render() {
       if (pr.url && pr.url.startsWith('http')) { card.target = '_blank'; card.rel = 'noopener noreferrer'; }
       const tags = (pr.tags || []).map(t => '<span class="tag">' + escapeHtml(t) + '</span>').join('');
       card.innerHTML =
-        '<div class="project-image">' + (pr.image ? '<img src="' + escapeHtml(pr.image) + '" alt="">' : '') + '</div>' +
+        '<div class="project-image">' + imgTag(pr.image, 'project', pr.title) + '</div>' +
         '<div class="project-body">' +
           '<h3 class="project-title">' + escapeHtml(pr.title) + '</h3>' +
           (pr.authors ? '<p class="project-authors">' + highlightSelf(pr.authors, p.name || '') + '</p>' : '') +
