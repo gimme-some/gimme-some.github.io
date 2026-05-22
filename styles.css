@@ -263,33 +263,33 @@ html.dark .avatar::after { mix-blend-mode: lighten; }
 }
  
 /* ---- Publications ----
-   Closer to suwonyoon: more breathing room, white type-tag,
-   shadow on Paper PDF button. */
+   Image is square (1:1) and slightly larger than before — closer to the
+   feel of suwonyoon's paper thumbnails. The square ratio lets full-page
+   document captures sit naturally without awkward cropping. */
 .pubs-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 .pub-card {
-  display: grid; grid-template-columns: 5.5rem 1fr; gap: 1.25rem;
+  display: grid; grid-template-columns: 6rem 1fr; gap: 1.25rem;
   padding: 1.25rem 1.5rem;
   border: 1px solid var(--border); border-radius: 0.875rem;
   background: var(--card);
-  align-items: stretch;        /* image stretches to card height */
+  align-items: stretch;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .pub-card:hover {
   border-color: color-mix(in srgb, var(--border) 100%, var(--foreground) 20%);
 }
-@media (min-width: 640px) { .pub-card { grid-template-columns: 6.5rem 1fr; } }
- 
-/* Image fills the card vertically. min-height keeps the 4:5
-   proportion at minimum even when the title is single-line. */
+@media (min-width: 640px) { .pub-card { grid-template-columns: 7.5rem 1fr; } }
+
+/* Square image area — width set by the grid column, height matches via
+   aspect-ratio. align-self center keeps the square vertically centered in
+   taller cards so the layout never feels lopsided. */
 .pub-image {
-  align-self: stretch;
-  min-height: 6.875rem;        /* 5.5rem * 5/4 — 4:5 minimum ratio */
+  align-self: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: 0.375rem;
   background: var(--muted); overflow: hidden;
   border: 1px solid var(--border);
-}
-@media (min-width: 640px) {
-  .pub-image { min-height: 8.125rem; }  /* 6.5rem * 5/4 */
 }
 .pub-image img { width: 100%; height: 100%; object-fit: cover; }
  
@@ -452,25 +452,68 @@ html.dark .pub-action:hover {
   to   { opacity: 1; transform: none; }
 }
 
-/* Body content cascade — each main section and separator slides in top-to-bottom
-   after the sidebar settles (sidebar finishes around 0.7s). The drop distance is
-   a bit larger than the sidebar's so the body has a clear "flowing down" feel. */
-@keyframes fade-in-down {
-  from { opacity: 0; transform: translateY(14px); }
+/* Body content cascade.
+   Each section, separator, and list item rises from a few pixels below and
+   fades in. The starting transform is positive translateY, ending at 0 —
+   i.e. "rises from below to its resting position", matching the gentle
+   upward entrance that feels common on contemporary academic homepages.
+   The sidebar finishes around 0.2s, so the body begins at 0.25s and each
+   subsequent element is +0.06s. */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
 }
+
+/* Section-level stagger (About, News, Publications, Projects sections, and
+   the separators between them) — these set the broad rhythm. */
 .content > section,
 .content > .separator {
-  animation: fade-in-down 0.6s ease both;
+  animation: fade-in-up 0.6s ease both;
 }
 .content > *:nth-child(1) { animation-delay: 0.25s; }
-.content > *:nth-child(2) { animation-delay: 0.32s; }
-.content > *:nth-child(3) { animation-delay: 0.39s; }
-.content > *:nth-child(4) { animation-delay: 0.46s; }
-.content > *:nth-child(5) { animation-delay: 0.53s; }
-.content > *:nth-child(6) { animation-delay: 0.60s; }
-.content > *:nth-child(7) { animation-delay: 0.67s; }
-.content > *:nth-child(8) { animation-delay: 0.74s; }
+.content > *:nth-child(2) { animation-delay: 0.31s; }
+.content > *:nth-child(3) { animation-delay: 0.37s; }
+.content > *:nth-child(4) { animation-delay: 0.43s; }
+.content > *:nth-child(5) { animation-delay: 0.49s; }
+.content > *:nth-child(6) { animation-delay: 0.55s; }
+
+/* Item-level stagger inside lists — each news entry, pub card, project card
+   fades in just after its parent section. Delays are layered on top of the
+   parent section's delay via additional offsets per nth-child. */
+.news-item,
+.pub-card,
+.project-card {
+  animation: fade-in-up 0.55s ease both;
+}
+/* News items: News section is the 2nd .content child (delay 0.31s). Items
+   begin after the section header is in, ~0.4s. */
+.news-list > .news-item:nth-child(1) { animation-delay: 0.40s; }
+.news-list > .news-item:nth-child(2) { animation-delay: 0.46s; }
+.news-list > .news-item:nth-child(3) { animation-delay: 0.52s; }
+.news-list > .news-item:nth-child(4) { animation-delay: 0.58s; }
+.news-list > .news-item:nth-child(5) { animation-delay: 0.64s; }
+.news-list > .news-item:nth-child(6) { animation-delay: 0.70s; }
+.news-list > .news-item:nth-child(7) { animation-delay: 0.76s; }
+.news-list > .news-item:nth-child(8) { animation-delay: 0.82s; }
+.news-list > .news-item:nth-child(9) { animation-delay: 0.88s; }
+.news-list > .news-item:nth-child(n+10) { animation-delay: 0.94s; }
+
+/* Publication cards: Publications section sits after the separator at
+   .content nth-child 4 (delay 0.43s). Cards begin ~0.55s. */
+.pubs-list > .pub-card:nth-child(1) { animation-delay: 0.55s; }
+.pubs-list > .pub-card:nth-child(2) { animation-delay: 0.63s; }
+.pubs-list > .pub-card:nth-child(3) { animation-delay: 0.71s; }
+.pubs-list > .pub-card:nth-child(4) { animation-delay: 0.79s; }
+.pubs-list > .pub-card:nth-child(5) { animation-delay: 0.87s; }
+.pubs-list > .pub-card:nth-child(n+6) { animation-delay: 0.95s; }
+
+/* Project cards: Projects section is at .content nth-child 6 (delay 0.55s).
+   Cards begin ~0.68s. */
+.projects-grid > .project-card:nth-child(1) { animation-delay: 0.68s; }
+.projects-grid > .project-card:nth-child(2) { animation-delay: 0.76s; }
+.projects-grid > .project-card:nth-child(3) { animation-delay: 0.84s; }
+.projects-grid > .project-card:nth-child(4) { animation-delay: 0.92s; }
+.projects-grid > .project-card:nth-child(n+5) { animation-delay: 1.00s; }
 
 @media (prefers-reduced-motion: reduce) {
   .avatar-wrap,
@@ -479,7 +522,10 @@ html.dark .pub-action:hover {
   .profile-location,
   .sidebar-links,
   .content > section,
-  .content > .separator {
+  .content > .separator,
+  .news-item,
+  .pub-card,
+  .project-card {
     animation: none;
   }
 }
