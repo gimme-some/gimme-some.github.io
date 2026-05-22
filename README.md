@@ -53,4 +53,5 @@ The schema covers profile information, an about section, a list of links, news e
 ## License
  
 Made by Min-Seong Kim (gimme-some)
+
 Free to use, modify, and adapt.
