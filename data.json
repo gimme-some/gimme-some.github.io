@@ -18,9 +18,7 @@
     "name_font_size": 36,
     "heading_weight": 500,
     "bold_weight": 700,
-    "tag_weight": 500,
-    "mono_size": 13,
-    "mono_weight": 500
+    "tag_weight": 500
   },
   "links": [
     { "icon": "external-link", "label": "Data Science Lab", "url": "https://example.com" },

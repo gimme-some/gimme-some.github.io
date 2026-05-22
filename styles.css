@@ -26,8 +26,6 @@
   --heading-weight: 500;
   --bold-weight: 700;
   --tag-weight: 500;
-  --mono-size: 13px;
-  --mono-weight: 500;
 }
 
 html.dark {
@@ -249,8 +247,8 @@ html.dark .avatar::after { mix-blend-mode: lighten; }
 .news-date {
   width: 5rem; flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: var(--mono-size);
-  font-weight: var(--mono-weight);
+  font-size: 0.8125rem;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: color-mix(in srgb, var(--muted-foreground) 80%, transparent);
 }
@@ -474,14 +472,35 @@ body.admin-body { padding: 0; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0 0.875rem;
   border-bottom: 1px solid var(--border);
   background: var(--background);
   font-size: 0.8rem;
   color: var(--muted-foreground);
   flex-shrink: 0;
+  gap: 0.75rem;
 }
-.preview-status { font-family: var(--font-mono); }
+.preview-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.preview-label {
+  font-weight: 500;
+  color: var(--foreground);
+}
+/* Sync status: a small dot that changes color.
+   Green = synced, gray = pending update. */
+.preview-status {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+.preview-status.pending { background: #a3a3a3; }
 
 /* Vertical drag handle between panes */
 .admin-resizer {
@@ -550,19 +569,26 @@ body.is-resizing iframe { pointer-events: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 0.375rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
   cursor: pointer;
-  font-size: 0.9rem;
-  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--foreground);
   font-family: inherit;
-  padding: 0.125rem 0.4rem;
-  height: 1.625rem;
+  padding: 0 0.625rem;
+  height: 1.75rem;
   line-height: 1;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.preview-toggle:hover { background: var(--muted); color: var(--foreground); }
+.preview-toggle:hover {
+  background: var(--muted);
+  border-color: color-mix(in srgb, var(--border) 100%, var(--foreground) 15%);
+}
+.preview-toggle:active { transform: translateY(1px); }
 
 .admin-container {
   max-width: 48rem; margin: 0 auto;

@@ -333,18 +333,17 @@ function collectLists() {
 let previewTimer = null;
 function syncPreview(immediate) {
   clearTimeout(previewTimer);
+  const status = $('#preview-status');
   const send = () => {
     collectLists();
     collectBindings();
     collectDesign();
     const iframe = $('#preview-frame');
-    const status = $('#preview-status');
     if (iframe && iframe.contentWindow) {
       try {
         iframe.contentWindow.postMessage({ type: 'data', payload: STATE.data }, '*');
-        // Green dot = preview is in sync with current edits
         if (status) {
-          status.style.color = '#22c55e';
+          status.classList.remove('pending');
           status.title = 'Preview is up to date';
         }
       } catch (e) {}
@@ -353,10 +352,8 @@ function syncPreview(immediate) {
   };
   if (immediate) send();
   else {
-    // Show "pending" state immediately
-    const status = $('#preview-status');
     if (status) {
-      status.style.color = 'var(--muted-foreground)';
+      status.classList.add('pending');
       status.title = 'Updating preview...';
     }
     previewTimer = setTimeout(send, 80);
@@ -376,7 +373,11 @@ function clearDirty() {
 
 /* ---- Event wiring ---- */
 function wireEvents() {
-  // Add buttons
+  // Add buttons.
+  // News, publications, and projects prepend (newest at top, which matches
+  // how academic homepages typically display them). Links/nav append.
+  const PREPEND_LISTS = { news: true, publications: true, projects: true };
+
   $$('[data-add]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -391,9 +392,22 @@ function wireEvents() {
         else blank[f.key] = '';
       });
       if (!Array.isArray(STATE.data[key])) STATE.data[key] = [];
-      STATE.data[key].push(blank);
+      if (PREPEND_LISTS[key]) {
+        STATE.data[key].unshift(blank);
+      } else {
+        STATE.data[key].push(blank);
+      }
       renderList(key);
       syncPreview(true);
+      // Scroll to & focus the newly added item so it's obvious where it went
+      const container = $(LIST_SCHEMAS[key].container);
+      const targetIndex = PREPEND_LISTS[key] ? 0 : (STATE.data[key].length - 1);
+      const newItem = container.querySelector('.list-item[data-index="' + targetIndex + '"]');
+      if (newItem) {
+        newItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const firstInput = newItem.querySelector('input[type="text"], textarea');
+        if (firstInput) firstInput.focus({ preventScroll: true });
+      }
     });
   });
 
@@ -587,7 +601,7 @@ function setupPreviewToggle() {
   if (!btn || !pane) return;
   btn.addEventListener('click', () => {
     const isCollapsed = pane.classList.toggle('collapsed');
-    if (label) label.textContent = isCollapsed ? 'Show' : 'Hide';
+    if (label) label.textContent = isCollapsed ? 'Show preview' : 'Hide preview';
   });
 }
 
@@ -646,9 +660,7 @@ function ensureDataDefaults() {
     name_font_size: 36,
     heading_weight: 500,
     bold_weight: 700,
-    tag_weight: 500,
-    mono_size: 13,
-    mono_weight: 500
+    tag_weight: 500
   };
   if (!STATE.data.design) STATE.data.design = {};
   Object.keys(defaults).forEach(k => {

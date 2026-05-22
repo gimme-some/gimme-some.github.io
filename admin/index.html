@@ -126,14 +126,10 @@
               <label>Sans-serif font</label>
               <select data-design="font_sans">
                 <option value="pretendard">Pretendard (default)</option>
-                <option value="system">System default</option>
                 <option value="inter">Inter</option>
                 <option value="ibm_plex">IBM Plex Sans</option>
                 <option value="manrope">Manrope</option>
-                <option value="jakarta">Plus Jakarta Sans</option>
-                <option value="outfit">Outfit</option>
                 <option value="space_grotesk">Space Grotesk</option>
-                <option value="dm_sans">DM Sans</option>
               </select>
             </div>
             <div class="field">
@@ -142,10 +138,6 @@
                 <option value="roboto_mono">Roboto Mono (default)</option>
                 <option value="jetbrains">JetBrains Mono</option>
                 <option value="ibm_plex_mono">IBM Plex Mono</option>
-                <option value="source_code">Source Code Pro</option>
-                <option value="fira_code">Fira Code</option>
-                <option value="dm_mono">DM Mono</option>
-                <option value="system">System default</option>
               </select>
             </div>
           </div>
@@ -163,23 +155,6 @@
               <div class="slider-field">
                 <input type="range" data-design="name_font_size" min="24" max="44" step="1" value="36">
                 <span class="slider-value" data-show="name_font_size">36</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label>Mono size · <span class="slider-value" data-show="mono_size" data-suffix="px">13px</span></label>
-              <div class="slider-field">
-                <input type="range" data-design="mono_size" min="11" max="16" step="1" value="13">
-                <span class="slider-value" data-show="mono_size">13</span>
-              </div>
-            </div>
-            <div class="field">
-              <label>Mono weight · <span class="slider-value" data-show="mono_weight">500</span></label>
-              <div class="slider-field">
-                <input type="range" data-design="mono_weight" min="400" max="700" step="100" value="500">
-                <span class="slider-value" data-show="mono_weight">500</span>
               </div>
             </div>
           </div>
@@ -300,12 +275,12 @@
     <!-- Live preview pane -->
     <div class="preview-pane" id="preview-pane">
       <div class="preview-toolbar">
-        <span style="display:flex; gap:0.5rem; align-items:center;">
-          <span class="preview-status" id="preview-status" title="Sync status">●</span>
-          <span>Live preview</span>
+        <span class="preview-toolbar-left">
+          <span class="preview-status" id="preview-status" title="Preview sync status"></span>
+          <span class="preview-label">Live preview</span>
         </span>
-        <button class="preview-toggle" id="preview-toggle" title="Show or hide preview">
-          <span id="preview-toggle-label">Hide</span>
+        <button class="preview-toggle" id="preview-toggle" type="button" title="Show or hide preview">
+          <span id="preview-toggle-label">Hide preview</span>
         </button>
       </div>
       <iframe id="preview-frame" src="../index.html" title="Preview"></iframe>
