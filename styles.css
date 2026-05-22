@@ -427,44 +427,6 @@ html.dark .pub-action:hover {
   to   { opacity: 1; transform: none; }
 }
  
-/* Cascading entrance for main content sections.
-   The sidebar staggers from 0s to 0.2s with a 0.5s fade, so it finishes
-   around 0.7s. Body sections start a touch earlier (0.25s) and overlap
-   slightly to feel continuous rather than sequential.
-   translateY is a bit larger than the sidebar's so the body has a clear
-   "flowing down" feel. */
-@keyframes fade-in-down {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: none; }
-}
-.content > section,
-.content > .separator {
-  animation: fade-in-down 0.6s ease both;
-}
-/* Stagger by direct-child order so each section and separator slides in
-   one after the other, top to bottom. Each step is +0.07s. */
-.content > :nth-child(1) { animation-delay: 0.25s; }
-.content > :nth-child(2) { animation-delay: 0.32s; }
-.content > :nth-child(3) { animation-delay: 0.39s; }
-.content > :nth-child(4) { animation-delay: 0.46s; }
-.content > :nth-child(5) { animation-delay: 0.53s; }
-.content > :nth-child(6) { animation-delay: 0.60s; }
-.content > :nth-child(7) { animation-delay: 0.67s; }
-.content > :nth-child(8) { animation-delay: 0.74s; }
- 
-/* Respect users who've opted out of motion */
-@media (prefers-reduced-motion: reduce) {
-  .avatar-wrap,
-  .profile-name,
-  .profile-title,
-  .profile-location,
-  .sidebar-links,
-  .content > section,
-  .content > .separator {
-    animation: none;
-  }
-}
- 
 /* ============================================================
    Admin page styles
    ============================================================ */
@@ -704,6 +666,14 @@ body.preview-globally-hidden #floating-show-preview {
   border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
 }
 .btn-danger:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+/* Subtler danger variant — used for Remove buttons that sit next to an Upload
+   button. Looks neutral by default; only reveals its red tint on hover. */
+.btn-subtle-danger { color: var(--muted-foreground); }
+.btn-subtle-danger:hover {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
 .btn-sm { height: 1.875rem; padding: 0 0.625rem; font-size: 0.8rem; }
  
 .admin-section {

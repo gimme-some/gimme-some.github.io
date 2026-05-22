@@ -24,9 +24,9 @@ A minimalist academic homepage template, hosted on GitHub Pages. Comes with an i
 │   ├── index.html          # admin editor + live preview
 │   └── admin.js            # GitHub API client + form bindings
 └── assets/
-    ├── profile.svg
-    ├── paper-placeholder.svg
-    └── project-placeholder.svg
+    ├── placeholder-profile.svg
+    ├── placeholder-paper.svg
+    └── placeholder-project.svg
 ```
  
 ## Setup

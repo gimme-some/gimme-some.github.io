@@ -34,9 +34,9 @@ let DATA = null;
 
 // Default placeholders used when a path is empty or fails to load.
 const PLACEHOLDERS = {
-  profile: 'assets/profile.svg',
-  paper:   'assets/paper-placeholder.svg',
-  project: 'assets/project-placeholder.svg'
+  profile: 'assets/placeholder-profile.svg',
+  paper:   'assets/placeholder-paper.svg',
+  project: 'assets/placeholder-project.svg'
 };
 
 /* Return a usable image path: trims whitespace, and falls back to the named

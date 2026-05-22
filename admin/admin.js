@@ -358,17 +358,26 @@ function buildListItem(schema, index, item) {
     field.innerHTML = '<label>' + f.label + '</label>';
 
     if (f.upload) {
-      // Wrap input with an upload button on the right.
+      // Wrap input with an upload button + a remove button on the right.
       // Slot name: <type>-<index>  e.g., "pub-0", "proj-2"
       const wrapInput = document.createElement('div');
       wrapInput.className = 'input-with-action';
       wrapInput.appendChild(input);
+
       const upBtn = document.createElement('button');
       upBtn.type = 'button';
       upBtn.className = 'btn btn-sm';
       upBtn.setAttribute('data-upload', f.upload + '-' + index);
       upBtn.textContent = 'Upload';
       wrapInput.appendChild(upBtn);
+
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button';
+      rmBtn.className = 'btn btn-sm btn-subtle-danger';
+      rmBtn.setAttribute('data-remove', f.upload + '-' + index);
+      rmBtn.textContent = 'Remove';
+      wrapInput.appendChild(rmBtn);
+
       field.appendChild(wrapInput);
     } else {
       field.appendChild(input);
@@ -612,6 +621,14 @@ function wireEvents() {
     triggerUpload(btn);
   });
 
+  // Image remove — clears the path and (if it's a real asset) deletes from GitHub.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    e.preventDefault();
+    triggerRemove(btn);
+  });
+
   $('#login-btn').addEventListener('click', login);
   $('#pat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
   $('#repo-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
@@ -746,7 +763,7 @@ async function triggerUpload(btn) {
     //   - it's a real asset path (starts with "assets/")
     //   - it's not a placeholder shipped with the template
     //   - it differs from the new path (we'd overwrite via putBinary otherwise)
-    const isPlaceholder = /placeholder\.svg$/i.test(oldPath);
+    const isPlaceholder = /placeholder[-.]/i.test(oldPath);
     const isExternal = /^https?:\/\//i.test(oldPath);
     if (oldPath && oldPath !== newPath && oldPath.startsWith('assets/') && !isPlaceholder && !isExternal) {
       try {
@@ -767,6 +784,64 @@ async function triggerUpload(btn) {
       syncPreview(true);
     }
     showToast('Upload failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origLabel;
+  }
+}
+
+/* ---- Image remove ----
+   Clears the image path on the linked input. If the path points to a real
+   uploaded asset (assets/...) and isn't a shipped placeholder, also deletes
+   the file from GitHub. After this, the input is empty and the preview
+   automatically falls back to the placeholder image. */
+async function triggerRemove(btn) {
+  if (!STATE.config) { showToast('Sign in first.', 'error'); return; }
+  const targetInput = findUploadTarget(btn);
+  if (!targetInput) { showToast('No target field found.', 'error'); return; }
+
+  const currentPath = (targetInput.value || '').trim().split('?')[0];
+  if (!currentPath) {
+    // Already empty — nothing to do
+    showToast('No image to remove.');
+    return;
+  }
+
+  if (!confirm('Remove this image? This will delete the file from your repo and replace it with a placeholder.')) {
+    return;
+  }
+
+  btn.disabled = true;
+  const origLabel = btn.textContent;
+  btn.textContent = 'Removing...';
+
+  try {
+    const isPlaceholder = /placeholder[-.]/i.test(currentPath);
+    const isExternal = /^https?:\/\//i.test(currentPath);
+    const isAsset = currentPath.startsWith('assets/');
+
+    // Delete from GitHub only if it's a real asset we own
+    if (isAsset && !isPlaceholder && !isExternal) {
+      try {
+        await deleteFile(currentPath, 'Remove image via admin: ' + currentPath);
+      } catch (e) {
+        // File might already be gone, or might be a path that doesn't exist
+        // on the remote. We still want to clear the local input.
+      }
+    }
+
+    // Drop any blob URL we had cached for this path
+    if (STATE.localPreviewMap[currentPath]) {
+      try { URL.revokeObjectURL(STATE.localPreviewMap[currentPath]); } catch (e) {}
+      delete STATE.localPreviewMap[currentPath];
+    }
+
+    // Clear the input; render.js will substitute the placeholder automatically
+    targetInput.value = '';
+    showToast('Image removed.');
+    syncPreview(true);
+  } catch (e) {
+    showToast('Remove failed: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = origLabel;
