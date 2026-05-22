@@ -134,8 +134,36 @@ const STATE = {
   data: null,
   sha: null,
   dirty: false,
-  previewReady: false
+  previewReady: false,
+  // Maps real asset paths (e.g., "assets/pub-0.png") to in-browser blob URLs
+  // (e.g., "blob:https://.../uuid"). Used to show just-uploaded images in the
+  // live preview iframe immediately, before GitHub Pages has had time to rebuild.
+  // STATE.data is never modified — only the postMessage payload sent to the
+  // iframe has its image paths swapped via this map.
+  localPreviewMap: {}
 };
+
+// Image path keys that should be swapped to blob URLs in the preview payload.
+// data.profile.photo, data.publications[*].image, data.projects[*].image
+function rewriteImagePathsForPreview(data, map) {
+  if (!data || !map || Object.keys(map).length === 0) return data;
+  // Clone deep so we don't mutate STATE.data
+  const clone = JSON.parse(JSON.stringify(data));
+  const lookup = (p) => {
+    if (!p) return p;
+    // path may carry a "?t=..." cache-buster — strip before lookup
+    const bare = String(p).split('?')[0];
+    return map[bare] || p;
+  };
+  if (clone.profile) clone.profile.photo = lookup(clone.profile.photo);
+  if (Array.isArray(clone.publications)) {
+    clone.publications.forEach(p => { p.image = lookup(p.image); });
+  }
+  if (Array.isArray(clone.projects)) {
+    clone.projects.forEach(p => { p.image = lookup(p.image); });
+  }
+  return clone;
+}
 
 // ---- Path bindings ----
 function getByPath(obj, path) {
@@ -402,7 +430,11 @@ function syncPreview(immediate) {
     const iframe = $('#preview-frame');
     if (iframe && iframe.contentWindow) {
       try {
-        iframe.contentWindow.postMessage({ type: 'data', payload: STATE.data }, '*');
+        // Build the payload — swap any image paths that have a local blob URL
+        // available, so just-uploaded images show up instantly in the preview
+        // without waiting for GitHub Pages to rebuild.
+        const payload = rewriteImagePathsForPreview(STATE.data, STATE.localPreviewMap);
+        iframe.contentWindow.postMessage({ type: 'data', payload: payload }, '*');
         if (status) {
           status.classList.remove('pending');
           status.title = 'Preview is up to date';
@@ -594,9 +626,13 @@ function wireEvents() {
     }
   });
 
-  // Warn before unload if dirty
+  // Warn before unload if dirty; also revoke any local preview blob URLs
+  // we created during the session to free browser memory.
   window.addEventListener('beforeunload', (e) => {
     if (STATE.dirty) { e.preventDefault(); e.returnValue = ''; }
+    Object.values(STATE.localPreviewMap).forEach(url => {
+      try { URL.revokeObjectURL(url); } catch (err) {}
+    });
   });
 
   // ---- Splitter: drag to resize panes ----
@@ -679,14 +715,34 @@ async function triggerUpload(btn) {
   // no accumulation. The slot name comes from data-upload="..." on the button.
   const slot = btn.getAttribute('data-upload') || 'image';
   const newPath = 'assets/' + slot + '.' + ext;
-  const oldPath = (targetInput.value || '').trim();
+  const oldPath = (targetInput.value || '').trim().split('?')[0];
 
   btn.disabled = true;
   const origLabel = btn.textContent;
   btn.textContent = 'Uploading...';
 
+  // STEP 1 — create a local blob URL for the file the user just picked.
+  // This is the secret sauce: by registering this in STATE.localPreviewMap,
+  // syncPreview will swap the real asset path with this in-browser URL when
+  // posting to the preview iframe. The preview shows the *actual uploaded
+  // image* immediately, with no GitHub Pages rebuild wait, no 404, no broken
+  // icon. STATE.data still carries the real path ("assets/pub-0.png") so
+  // saving works correctly.
+  const blobUrl = URL.createObjectURL(file);
+  // Revoke any previous blob URL we had for this same slot to avoid memory leak
+  if (STATE.localPreviewMap[newPath]) {
+    try { URL.revokeObjectURL(STATE.localPreviewMap[newPath]); } catch (e) {}
+  }
+  STATE.localPreviewMap[newPath] = blobUrl;
+
+  // Show the new path in the input and update the preview right away —
+  // the preview will use the blob URL via the map; the user sees their
+  // upload in the live preview instantly.
+  targetInput.value = newPath;
+  syncPreview(true);
+
   try {
-    // Delete the old file FIRST if:
+    // STEP 2 — push the file up to GitHub. Delete the old file first if:
     //   - it's a real asset path (starts with "assets/")
     //   - it's not a placeholder shipped with the template
     //   - it differs from the new path (we'd overwrite via putBinary otherwise)
@@ -698,22 +754,18 @@ async function triggerUpload(btn) {
       } catch (e) { /* ignore — file might already be gone */ }
     }
 
-    // Read file as ArrayBuffer
     const buf = await file.arrayBuffer();
     await putBinary(newPath, buf, 'Upload image via admin: ' + newPath);
 
-    // Append a cache-busting query so the preview iframe shows the new image immediately
-    targetInput.value = newPath + '?t=' + Date.now();
-    showToast('Image uploaded.');
-    syncPreview(true);
-
-    // Strip the cache-buster from the persisted value after a short delay
-    // (so the saved data.json stays clean — the browser will fetch fresh next page load anyway).
-    setTimeout(() => {
-      targetInput.value = newPath;
-      syncPreview(true);
-    }, 1500);
+    showToast('Image uploaded. The live preview shows it instantly; the real file will be served from GitHub Pages in ~30-60s.');
   } catch (e) {
+    // Upload failed — drop the blob URL from the map so we don't keep showing
+    // a "preview" of a file that isn't on GitHub.
+    if (STATE.localPreviewMap[newPath] === blobUrl) {
+      try { URL.revokeObjectURL(blobUrl); } catch (err) {}
+      delete STATE.localPreviewMap[newPath];
+      syncPreview(true);
+    }
     showToast('Upload failed: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
