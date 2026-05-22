@@ -84,6 +84,50 @@ async function putFile(path, content, sha, message) {
   return ghRequest(url, { method: 'PUT', body: JSON.stringify(body) });
 }
 
+/* Binary upload: takes an ArrayBuffer and base64-encodes it for the contents API.
+   Looks up the existing sha if the path already exists, so it overwrites cleanly. */
+async function putBinary(path, arrayBuffer, message) {
+  const cfg = STATE.config;
+  // Base64-encode the binary
+  const bytes = new Uint8Array(arrayBuffer);
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  const b64 = btoa(bin);
+
+  // If the path already exists, GitHub requires the existing sha to overwrite
+  let sha;
+  try {
+    const url = '/repos/' + cfg.repo + '/contents/' + encodeURIComponent(path) + '?ref=' + encodeURIComponent(cfg.branch);
+    const existing = await ghRequest(url);
+    sha = existing.sha;
+  } catch (e) { /* file doesn't exist — that's fine */ }
+
+  const url = '/repos/' + cfg.repo + '/contents/' + encodeURIComponent(path);
+  const body = { message: message, content: b64, branch: cfg.branch };
+  if (sha) body.sha = sha;
+  return ghRequest(url, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+async function deleteFile(path, message) {
+  const cfg = STATE.config;
+  // Need the current sha to delete
+  let sha;
+  try {
+    const url = '/repos/' + cfg.repo + '/contents/' + encodeURIComponent(path) + '?ref=' + encodeURIComponent(cfg.branch);
+    const existing = await ghRequest(url);
+    sha = existing.sha;
+  } catch (e) {
+    // File doesn't exist; nothing to delete
+    return null;
+  }
+  const url = '/repos/' + cfg.repo + '/contents/' + encodeURIComponent(path);
+  const body = { message: message, sha: sha, branch: cfg.branch };
+  return ghRequest(url, { method: 'DELETE', body: JSON.stringify(body) });
+}
+
 // ---- State ----
 const STATE = {
   config: null,
@@ -208,7 +252,7 @@ const LIST_SCHEMAS = {
       { key: 'venue_tag', label: 'Venue tag', type: 'text' },
       { key: 'type_tag', label: 'Type tag', type: 'text' },
       { key: 'highlight', label: 'Highlight tag (optional)', type: 'text', full: true },
-      { key: 'image', label: 'Image path', type: 'text' },
+      { key: 'image', label: 'Image path', type: 'text', upload: 'pub' },
       { key: 'pdf_url', label: 'PDF URL', type: 'text' }
     ]
   },
@@ -218,7 +262,7 @@ const LIST_SCHEMAS = {
     fields: [
       { key: 'title', label: 'Title', type: 'text' },
       { key: 'authors', label: 'Authors', type: 'text' },
-      { key: 'image', label: 'Image path', type: 'text' },
+      { key: 'image', label: 'Image path', type: 'text', upload: 'proj' },
       { key: 'url', label: 'URL', type: 'text' },
       { key: 'description', label: 'Description', type: 'textarea', full: true },
       { key: 'tags', label: 'Tags (comma-separated)', type: 'tags', full: true }
@@ -283,7 +327,23 @@ function buildListItem(schema, index, item) {
     input.setAttribute('data-field', f.key);
     input.setAttribute('data-type', f.type);
     field.innerHTML = '<label>' + f.label + '</label>';
-    field.appendChild(input);
+
+    if (f.upload) {
+      // Wrap input with an upload button on the right.
+      // Slot name: <type>-<index>  e.g., "pub-0", "proj-2"
+      const wrapInput = document.createElement('div');
+      wrapInput.className = 'input-with-action';
+      wrapInput.appendChild(input);
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'btn btn-sm';
+      upBtn.setAttribute('data-upload', f.upload + '-' + index);
+      upBtn.textContent = 'Upload';
+      wrapInput.appendChild(upBtn);
+      field.appendChild(wrapInput);
+    } else {
+      field.appendChild(input);
+    }
 
     if (f.full) {
       wrap.appendChild(field);
@@ -508,6 +568,17 @@ function wireEvents() {
     location.reload();
   });
 
+  // Image upload — delegated, works for both static photo field and dynamic list items.
+  // Each upload trigger has data-upload-target pointing at an input[data-bind=...]
+  // or sibling input. Clicking opens a file picker, uploads to GitHub, and writes
+  // the resulting path into the target input.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-upload]');
+    if (!btn) return;
+    e.preventDefault();
+    triggerUpload(btn);
+  });
+
   $('#login-btn').addEventListener('click', login);
   $('#pat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
   $('#repo-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
@@ -536,6 +607,119 @@ function wireEvents() {
 /* Resizer: drag the divider to change pane widths.
    Width is persisted in localStorage so it's remembered next time. */
 const SPLIT_KEY = 'admin_split_v1';
+
+/* ---- Image upload ----
+   Opens a file picker, uploads the chosen image to GitHub at assets/<slot>.<ext>,
+   deletes the prior file at that path (if any), and writes the new path into
+   the linked input. */
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;   // 5 MB; GitHub Contents API limit is 25 MB but we want fast pages
+const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+
+function findUploadTarget(btn) {
+  // Strategy: btn lives next to an input that holds the current image path.
+  // We look at the same .field or .field-row scope for the nearest text input.
+  const field = btn.closest('.field, .field-row, .list-item') || document;
+  const candidates = field.querySelectorAll('input[type="text"]');
+  // Prefer the one explicitly tagged
+  const explicit = btn.getAttribute('data-upload-target');
+  if (explicit) {
+    const el = field.querySelector(explicit) || document.querySelector(explicit);
+    if (el) return el;
+  }
+  // Otherwise pick the first text input that contains a path-looking string
+  for (const c of candidates) {
+    if (c.value && /\.(jpg|jpeg|png|webp|gif|svg)/i.test(c.value)) return c;
+  }
+  return candidates[0] || null;
+}
+
+async function triggerUpload(btn) {
+  if (!STATE.config) {
+    showToast('Sign in first.', 'error');
+    return;
+  }
+  const targetInput = findUploadTarget(btn);
+  if (!targetInput) { showToast('No target field found.', 'error'); return; }
+
+  // Build a hidden file input on the fly
+  const file = await pickFile();
+  if (!file) return;
+
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!ALLOWED_EXT.includes(ext)) {
+    showToast('Only images allowed (jpg, png, webp, gif, svg).', 'error');
+    return;
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    showToast('File too large (max 5 MB).', 'error');
+    return;
+  }
+
+  // Determine the upload slot.
+  // For built-in single-image fields (profile photo, publication image, project image),
+  // we keep ONE filename per slot — so re-uploading overwrites the old one and there's
+  // no accumulation. The slot name comes from data-upload="..." on the button.
+  const slot = btn.getAttribute('data-upload') || 'image';
+  const newPath = 'assets/' + slot + '.' + ext;
+  const oldPath = (targetInput.value || '').trim();
+
+  btn.disabled = true;
+  const origLabel = btn.textContent;
+  btn.textContent = 'Uploading...';
+
+  try {
+    // Delete the old file FIRST if:
+    //   - it's a real asset path (starts with "assets/")
+    //   - it's not a placeholder shipped with the template
+    //   - it differs from the new path (we'd overwrite via putBinary otherwise)
+    const isPlaceholder = /placeholder\.svg$/i.test(oldPath);
+    const isExternal = /^https?:\/\//i.test(oldPath);
+    if (oldPath && oldPath !== newPath && oldPath.startsWith('assets/') && !isPlaceholder && !isExternal) {
+      try {
+        await deleteFile(oldPath, 'Remove old image (replaced via admin)');
+      } catch (e) { /* ignore — file might already be gone */ }
+    }
+
+    // Read file as ArrayBuffer
+    const buf = await file.arrayBuffer();
+    await putBinary(newPath, buf, 'Upload image via admin: ' + newPath);
+
+    // Append a cache-busting query so the preview iframe shows the new image immediately
+    targetInput.value = newPath + '?t=' + Date.now();
+    showToast('Image uploaded.');
+    syncPreview(true);
+
+    // Strip the cache-buster from the persisted value after a short delay
+    // (so the saved data.json stays clean — the browser will fetch fresh next page load anyway).
+    setTimeout(() => {
+      targetInput.value = newPath;
+      syncPreview(true);
+    }, 1500);
+  } catch (e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origLabel;
+  }
+}
+
+function pickFile() {
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml';
+    input.style.display = 'none';
+    input.addEventListener('change', () => {
+      const f = input.files && input.files[0];
+      document.body.removeChild(input);
+      resolve(f || null);
+    });
+    // If the user cancels, the change event won't fire. We can detect cancellation
+    // by listening to window focus, but it's not critical here — leftover input is harmless.
+    document.body.appendChild(input);
+    input.click();
+  });
+}
 
 function setupSplitter() {
   const resizer = document.getElementById('admin-resizer');
@@ -595,14 +779,25 @@ function setupSplitter() {
 }
 
 function setupPreviewToggle() {
-  const btn = document.getElementById('preview-toggle');
-  const pane = document.getElementById('preview-pane');
-  const label = document.getElementById('preview-toggle-label');
-  if (!btn || !pane) return;
-  btn.addEventListener('click', () => {
-    const isCollapsed = pane.classList.toggle('collapsed');
-    if (label) label.textContent = isCollapsed ? 'Show preview' : 'Hide preview';
-  });
+  const hideBtn = document.getElementById('preview-toggle');
+  const showBtn = document.getElementById('show-preview-btn');
+  const shell = document.getElementById('admin-root');
+  if (!shell) return;
+
+  function setHidden(hidden) {
+    shell.classList.toggle('preview-hidden', hidden);
+    if (showBtn) showBtn.style.display = hidden ? '' : 'none';
+    // Remember preference
+    try { localStorage.setItem('admin_preview_hidden', hidden ? '1' : '0'); } catch (e) {}
+  }
+
+  if (hideBtn) hideBtn.addEventListener('click', () => setHidden(true));
+  if (showBtn) showBtn.addEventListener('click', () => setHidden(false));
+
+  // Restore last state
+  try {
+    if (localStorage.getItem('admin_preview_hidden') === '1') setHidden(true);
+  } catch (e) {}
 }
 
 async function login() {

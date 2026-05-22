@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../styles.css?v=5">
   <script>
     (function(){
       try {
@@ -67,6 +67,7 @@
         <div class="admin-header">
           <h1>Edit Homepage</h1>
           <div class="admin-actions">
+            <button class="btn btn-sm" id="show-preview-btn" title="Show preview" style="display:none;">Show preview</button>
             <button class="btn btn-sm" id="reload-btn" title="Re-fetch from GitHub">Reload</button>
             <button class="btn btn-sm btn-danger" id="logout-btn">Sign out</button>
             <button class="btn btn-primary btn-sm" id="save-btn">Save changes</button>
@@ -200,7 +201,13 @@
             <div class="field"><label>Lab name</label><input data-bind="profile.lab_name"></div>
             <div class="field"><label>Lab URL</label><input data-bind="profile.lab_url"></div>
           </div>
-          <div class="field"><label>Photo path</label><input data-bind="profile.photo"></div>
+          <div class="field">
+            <label>Photo path</label>
+            <div class="input-with-action">
+              <input data-bind="profile.photo">
+              <button type="button" class="btn btn-sm" data-upload="profile">Upload image</button>
+            </div>
+          </div>
         </div>
 
         <!-- About -->
@@ -279,9 +286,7 @@
           <span class="preview-status" id="preview-status" title="Preview sync status"></span>
           <span class="preview-label">Live preview</span>
         </span>
-        <button class="preview-toggle" id="preview-toggle" type="button" title="Show or hide preview">
-          <span id="preview-toggle-label">Hide preview</span>
-        </button>
+        <button class="preview-toggle" id="preview-toggle" type="button" title="Hide preview">Hide preview</button>
       </div>
       <iframe id="preview-frame" src="../index.html" title="Preview"></iframe>
     </div>
@@ -289,6 +294,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="admin.js"></script>
+  <script src="admin.js?v=5"></script>
 </body>
 </html>

@@ -537,13 +537,16 @@ body.admin-body { padding: 0; }
 body.is-resizing { cursor: col-resize !important; user-select: none; }
 body.is-resizing iframe { pointer-events: none; }
 
-/* Collapsed preview state (works on both desktop and mobile).
-   On desktop: pane shrinks to a thin sidebar.
-   On mobile: pane collapses to just the toolbar. */
-.preview-pane.collapsed iframe { display: none; }
-.preview-pane.collapsed {
-  flex: 0 0 auto;
-  width: auto;
+/* Collapsed preview state.
+   When the user clicks "Hide preview", we completely hide both the preview
+   pane and the resizer, and expand the admin pane to fill the viewport.
+   A floating "Show preview" button is exposed (placed in the admin header)
+   so the user can bring the preview back. */
+.admin-shell.preview-hidden .preview-pane { display: none; }
+.admin-shell.preview-hidden .admin-resizer { display: none; }
+.admin-shell.preview-hidden .admin-pane {
+  width: 100% !important;
+  flex: 1 1 100%;
 }
 
 /* Mobile: stack vertically, hide resizer, preview goes below.
@@ -561,7 +564,6 @@ body.is-resizing iframe { pointer-events: none; }
     position: sticky;
     bottom: 0;
   }
-  .preview-pane.collapsed { height: 2.5rem; width: 100%; }
 }
 
 /* Toggle button — always visible so user can collapse preview on any size */
@@ -668,6 +670,21 @@ body.is-resizing iframe { pointer-events: none; }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
 }
 .field textarea { resize: vertical; min-height: 4.5rem; }
+
+/* Input paired with an inline action button (e.g., "Upload image") */
+.input-with-action {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+}
+.input-with-action input {
+  flex: 1; min-width: 0;
+}
+.input-with-action .btn {
+  flex-shrink: 0;
+  height: auto;
+  white-space: nowrap;
+}
 .field-row {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem;
   margin-bottom: 0.875rem;
