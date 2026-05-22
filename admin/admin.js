@@ -196,7 +196,8 @@ function fillDesignControls() {
   // Highlight active preset swatch
   $$('[data-preset-target]').forEach(group => {
     const key = group.getAttribute('data-preset-target');
-    const cur = (d[key] || '').toLowerCase();
+    const v = d[key];
+    const cur = (typeof v === 'string' ? v : '').toLowerCase();
     $$('.preset-swatch', group).forEach(sw => {
       sw.classList.toggle('active', (sw.getAttribute('data-color') || '').toLowerCase() === cur);
     });
@@ -780,14 +781,17 @@ function setupSplitter() {
 
 function setupPreviewToggle() {
   const hideBtn = document.getElementById('preview-toggle');
-  const showBtn = document.getElementById('show-preview-btn');
+  const showBtn = document.getElementById('floating-show-preview');
   const shell = document.getElementById('admin-root');
   if (!shell) return;
 
   function setHidden(hidden) {
     shell.classList.toggle('preview-hidden', hidden);
-    if (showBtn) showBtn.style.display = hidden ? '' : 'none';
-    // Remember preference
+    // Show the floating button when preview is hidden, hide it otherwise.
+    // We use inline display because the CSS rule that exposes it depends on
+    // the .preview-hidden class being applied to a sibling — explicit toggle
+    // here is more reliable across browsers.
+    if (showBtn) showBtn.style.display = hidden ? 'inline-flex' : 'none';
     try { localStorage.setItem('admin_preview_hidden', hidden ? '1' : '0'); } catch (e) {}
   }
 
@@ -869,7 +873,21 @@ async function loadData() {
     const file = await fetchFile('data.json');
     STATE.sha = file.sha;
     STATE.data = JSON.parse(file.content);
+
+    // Capture which design keys were missing from the saved file BEFORE
+    // ensureDataDefaults() backfills them. This makes it obvious in the console
+    // if any design value was supplied by defaults rather than the user's save.
+    const savedDesign = STATE.data.design || {};
+    const beforeKeys = Object.keys(savedDesign);
+
     ensureDataDefaults();
+
+    const afterKeys = Object.keys(STATE.data.design);
+    const filledByDefaults = afterKeys.filter(k => !beforeKeys.includes(k));
+    if (filledByDefaults.length) {
+      console.warn('[admin] data.json was missing design keys; defaults applied:', filledByDefaults);
+    }
+    console.log('[admin] Loaded design:', JSON.parse(JSON.stringify(STATE.data.design)));
 
     fillBindings();
     renderAllLists();

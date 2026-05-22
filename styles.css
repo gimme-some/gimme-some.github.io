@@ -538,15 +538,54 @@ body.is-resizing { cursor: col-resize !important; user-select: none; }
 body.is-resizing iframe { pointer-events: none; }
 
 /* Collapsed preview state.
-   When the user clicks "Hide preview", we completely hide both the preview
-   pane and the resizer, and expand the admin pane to fill the viewport.
-   A floating "Show preview" button is exposed (placed in the admin header)
-   so the user can bring the preview back. */
-.admin-shell.preview-hidden .preview-pane { display: none; }
-.admin-shell.preview-hidden .admin-resizer { display: none; }
+   When the user clicks "Hide preview", we completely hide the preview pane
+   and the resizer, and expand the admin pane to fill the viewport.
+   A floating "Show preview" button (#floating-show-preview, fixed top-right)
+   is exposed so the user can always bring the preview back regardless of where
+   they are in the form. !important is used because earlier rules give .preview-pane
+   display:flex with the same specificity. */
+.admin-shell.preview-hidden .preview-pane {
+  display: none !important;
+}
+.admin-shell.preview-hidden .admin-resizer {
+  display: none !important;
+}
 .admin-shell.preview-hidden .admin-pane {
   width: 100% !important;
-  flex: 1 1 100%;
+  flex: 1 1 100% !important;
+}
+
+/* Floating show-preview button — hidden by default, revealed when
+   preview-hidden class is active. Sits at the top-right of the viewport
+   so it's always reachable. */
+#floating-show-preview {
+  position: fixed;
+  top: 0.875rem;
+  right: 1rem;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.875rem;
+  background: var(--foreground);
+  color: var(--background);
+  border: 1px solid var(--foreground);
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.15);
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+#floating-show-preview:hover {
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.2);
+}
+#floating-show-preview:active { transform: translateY(1px); }
+.admin-shell.preview-hidden ~ #floating-show-preview,
+body.preview-globally-hidden #floating-show-preview {
+  display: inline-flex;
 }
 
 /* Mobile: stack vertically, hide resizer, preview goes below.
