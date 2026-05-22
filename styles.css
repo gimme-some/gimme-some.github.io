@@ -413,13 +413,21 @@ html.dark .pub-action:hover {
   gap: 1rem;
   font-size: 0.875rem; color: var(--muted-foreground);
 }
+/* Text shrinks before icons, and on narrow viewports the font itself eases
+   down a touch via clamp(). If the name is still too long to fit on one
+   line, it wraps naturally — no truncation, no ellipsis. */
 #footer-text {
-  white-space: nowrap;       /* keep "© 2026 <name>" on one line */
-  overflow: hidden;
-  text-overflow: ellipsis;   /* graceful truncation for very long names */
-  min-width: 0;              /* allow shrinking inside the flex row */
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(0.75rem, 2.6vw, 0.875rem);
+  line-height: 1.4;
+  word-break: keep-all;       /* avoid splitting Korean syllables / short words */
+  overflow-wrap: anywhere;    /* but allow breaks anywhere if truly necessary */
 }
-.footer-icons { display: flex; gap: 0.25rem; }
+.footer-icons {
+  display: flex; gap: 0.25rem;
+  flex-shrink: 0;             /* icons never shrink */
+}
 .footer-icons a {
   display: inline-flex; width: 2rem; height: 2rem;
   align-items: center; justify-content: center;
@@ -428,16 +436,6 @@ html.dark .pub-action:hover {
 }
 .footer-icons a:hover { background: var(--muted); color: var(--foreground); }
 .footer-icons svg { width: 1rem; height: 1rem; }
-
-/* On very narrow screens, stack vertically so even long names stay readable. */
-@media (max-width: 420px) {
-  .footer-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  #footer-text { white-space: normal; }
-}
  
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
